@@ -5,11 +5,15 @@ export class Money {
     constructor(value: number) {
 
         if (value < 0) {
-            throw new Error('Money cannot be negative');
+            throw new Error(
+                'El valor monetario no puede ser negativo'
+            );
         }
 
         if (!Number.isInteger(value)) {
-            throw new Error('Money must be an integer');
+            throw new Error(
+                'El valor monetario debe ser un número entero'
+            );
         }
 
         this.value = value;
@@ -18,4 +22,4 @@ export class Money {
     getValue(): number {
         return this.value;
     }
-} 
+}

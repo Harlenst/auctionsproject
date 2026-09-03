@@ -1,9 +1,11 @@
+import { Money } from '../value-objects/Money';
+
 export class Bid {
 
     id: number;
     userId: number;
     auctionId: number;
-    amount: number;
+    amount: Money;
     createdAt: Date;
 
     constructor(
@@ -13,10 +15,11 @@ export class Bid {
         amount: number,
         createdAt: Date
     ) {
+
         this.id = id;
         this.userId = userId;
         this.auctionId = auctionId;
-        this.amount = amount;
+        this.amount = new Money(amount);
         this.createdAt = createdAt;
     }
 }

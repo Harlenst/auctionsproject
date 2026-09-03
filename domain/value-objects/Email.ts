@@ -5,7 +5,9 @@ export class Email {
     constructor(value: string) {
 
         if (!value.includes('@')) {
-            throw new Error('Invalid email');
+            throw new Error(
+                'Correo electrónico inválido'
+            );
         }
 
         this.value = value;

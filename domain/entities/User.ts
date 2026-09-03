@@ -1,8 +1,10 @@
+import { Email } from '../value-objects/Email';
+
 export class User {
 
     id: number;
     name: string;
-    email: string;
+    email: Email;
     password: string;
 
     constructor(
@@ -11,9 +13,10 @@ export class User {
         email: string,
         password: string
     ) {
+
         this.id = id;
         this.name = name;
-        this.email = email;
+        this.email = new Email(email);
         this.password = password;
     }
 }

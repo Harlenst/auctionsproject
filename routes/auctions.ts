@@ -4,7 +4,8 @@ import {
     getAuctions,
     getAuction,
     placeBid,
-    cancelAuction
+    cancelAuction,
+    closeAuction
 } from '../controllers/auctions';
 
 const auctionRouter: Router = express.Router();
@@ -14,5 +15,6 @@ auctionRouter.get('/auctions/:id', getAuction);
 auctionRouter.post('/auctions', createAuction);
 auctionRouter.post('/auctions/:id/bids', placeBid);
 auctionRouter.patch('/auctions/:id/cancel', cancelAuction);
+auctionRouter.patch('/auctions/:id/close', closeAuction);
 
 export default auctionRouter;

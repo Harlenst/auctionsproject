@@ -12,7 +12,9 @@ export class AuctionStatus {
         ];
 
         if (!validStatuses.includes(value)) {
-            throw new Error('Invalid auction status');
+            throw new Error(
+                'Estado de subasta inválido'
+            );
         }
 
         this.value = value;
