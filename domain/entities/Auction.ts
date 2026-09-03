@@ -10,12 +10,12 @@ export class Auction {
     sellerId: number;
     categoryId: number;
 
+    // RN-05: estos datos no pueden modificarse después de publicada la subasta.
     readonly basePrice: Money;
     readonly minimumIncrement: Money;
-
-    createdAt: Date;
     readonly closingAt: Date;
 
+    createdAt: Date;
     status: AuctionStatus;
     bids: Bid[];
     rejectedBidAttempts: RejectedBidAttempt[];
@@ -32,7 +32,7 @@ export class Auction {
         status: string
     ) {
 
-        // RN-01: El precio base y el incremento mínimo deben ser mayores que cero.
+        // RN-01
         if (basePrice <= 0) {
             throw new Error(
                 'El precio base debe ser mayor que cero'
@@ -45,14 +45,13 @@ export class Auction {
             );
         }
 
-        // RN-02: La fecha de cierre debe ser posterior a la publicación.
+        // RN-02
         if (closingAt <= createdAt) {
             throw new Error(
                 'La fecha de cierre debe ser posterior a la fecha de publicación'
             );
         }
 
-        // RN-02: Una subasta no puede nacer vencida.
         const now = new Date();
 
         if (closingAt <= now) {
@@ -70,14 +69,13 @@ export class Auction {
         const thirtyDays =
             30 * 24 * 60 * 60 * 1000;
 
-        // RN-03: La duración debe ser mínimo una hora.
+        // RN-03
         if (duration < oneHour) {
             throw new Error(
                 'La duración de la subasta no puede ser menor a una hora'
             );
         }
 
-        // RN-03: La duración no puede superar treinta días.
         if (duration > thirtyDays) {
             throw new Error(
                 'La duración de la subasta no puede ser mayor a treinta días'
@@ -89,13 +87,10 @@ export class Auction {
         this.sellerId = sellerId;
         this.categoryId = categoryId;
 
-        // RN-01 y RNF-07: El dinero se maneja mediante el Value Object Money.
         this.basePrice = new Money(basePrice);
         this.minimumIncrement = new Money(minimumIncrement);
 
         this.createdAt = createdAt;
-
-        // RN-05: La fecha de cierre no puede modificarse después de publicar.
         this.closingAt = closingAt;
 
         this.status = new AuctionStatus(status);
@@ -106,7 +101,7 @@ export class Auction {
 
     cancel(): void {
 
-        // RN-04: Una subasta con pujas no puede cancelarse.
+        // RN-04
         if (this.bids.length > 0) {
             throw new Error(
                 'La subasta no puede cancelarse porque ya tiene pujas'
@@ -119,7 +114,8 @@ export class Auction {
             );
         }
 
-        this.status = new AuctionStatus('cancelled');
+        this.status =
+            new AuctionStatus('cancelled');
     }
 
     registerRejectedBid(
@@ -127,22 +123,23 @@ export class Auction {
         reason: string
     ): void {
 
-        // RN-12: Toda puja rechazada queda registrada con el motivo.
-        const attempt = new RejectedBidAttempt(
-            this.rejectedBidAttempts.length + 1,
-            bid.userId,
-            this.id,
-            bid.amount.getValue(),
-            reason,
-            new Date()
-        );
+        // RN-12
+        const attempt =
+            new RejectedBidAttempt(
+                this.rejectedBidAttempts.length + 1,
+                bid.userId,
+                this.id,
+                bid.amount.getValue(),
+                reason,
+                new Date()
+            );
 
         this.rejectedBidAttempts.push(attempt);
     }
 
     placeBid(bid: Bid): void {
 
-        // RN-06: Solo se aceptan pujas sobre subastas abiertas.
+        // RN-06
         if (this.status.getValue() !== 'open') {
 
             this.registerRejectedBid(
@@ -155,7 +152,7 @@ export class Auction {
             );
         }
 
-        // RN-07: El vendedor no puede pujar en su propia subasta.
+        // RN-07
         if (bid.userId === this.sellerId) {
 
             this.registerRejectedBid(
@@ -168,7 +165,7 @@ export class Auction {
             );
         }
 
-        // RN-08: La primera puja debe ser mayor o igual al precio base.
+        // RN-08
         if (
             this.bids.length === 0 &&
             bid.amount.getValue() < this.basePrice.getValue()
@@ -189,7 +186,7 @@ export class Auction {
             const highestBid =
                 this.bids[this.bids.length - 1];
 
-            // RN-10: El mejor postor no puede superar su propia puja.
+            // RN-10
             if (highestBid.userId === bid.userId) {
 
                 this.registerRejectedBid(
@@ -206,11 +203,8 @@ export class Auction {
                 highestBid.amount.getValue() +
                 this.minimumIncrement.getValue();
 
-            // RN-09: La nueva puja debe superar la vigente por el incremento mínimo.
-            if (
-                bid.amount.getValue() <
-                minimumAmount
-            ) {
+            // RN-09
+            if (bid.amount.getValue() < minimumAmount) {
 
                 this.registerRejectedBid(
                     bid,
@@ -223,13 +217,13 @@ export class Auction {
             }
         }
 
-        // RN-11: La puja aceptada se agrega y no existe operación para retirarla.
+        // RN-11
         this.bids.push(bid);
     }
 
     close(): void {
 
-        // RN-16: Una subasta cerrada no puede cerrarse nuevamente.
+        // RN-16
         if (
             this.status.getValue() === 'closed' ||
             this.status.getValue() === 'deserted'
@@ -251,7 +245,7 @@ export class Auction {
             );
         }
 
-        // RN-14: Si no hay pujas, la subasta queda desierta.
+        // RN-14
         if (this.bids.length === 0) {
 
             this.status =
@@ -260,7 +254,7 @@ export class Auction {
             return;
         }
 
-        // RN-13: Si existen pujas, la subasta se cierra con un ganador.
+        // RN-13
         this.status =
             new AuctionStatus('closed');
     }
@@ -276,7 +270,7 @@ export class Auction {
 
     getWinner(): Bid | null {
 
-        // RN-13: La puja más alta corresponde al ganador al cerrar.
+        // RN-13
         if (this.bids.length === 0) {
             return null;
         }
@@ -291,7 +285,8 @@ export class Auction {
         expirationDate: Date;
     } {
 
-        const winner = this.getWinner();
+        const winner =
+            this.getWinner();
 
         if (winner === null) {
             throw new Error(
@@ -299,11 +294,12 @@ export class Auction {
             );
         }
 
-        // RN-15: La orden de pago vence 48 horas después del cierre.
-        const expirationDate = new Date(
-            this.closingAt.getTime() +
-            48 * 60 * 60 * 1000
-        );
+        // RN-15
+        const expirationDate =
+            new Date(
+                this.closingAt.getTime() +
+                48 * 60 * 60 * 1000
+            );
 
         return {
             winnerId: winner.userId,

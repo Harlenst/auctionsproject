@@ -22,13 +22,22 @@ export const registerUser = (
     try {
 
         const createUser =
-            new CreateUser(userRepository);
+            new CreateUser(
+                userRepository
+            );
 
-        const user = createUser.execute(
-            userRepository.getAll().length + 1,
-            name,
-            email,
-            password
+        // RN-22: correo único.
+        const user =
+            createUser.execute(
+                userRepository.getAll().length + 1,
+                name,
+                email,
+                password
+            );
+
+        console.log(
+            'Usuario registrado:',
+            user.id
         );
 
         response.status(201).json({
@@ -44,6 +53,7 @@ export const registerUser = (
 
         response.status(400).json({
             ok: false,
+            code: 'USER_REGISTRATION_ERROR',
             message: error instanceof Error
                 ? error.message
                 : 'No fue posible registrar el usuario'
@@ -64,11 +74,20 @@ export const loginUser = (
     try {
 
         const loginUser =
-            new LoginUser(userRepository);
+            new LoginUser(
+                userRepository
+            );
 
-        const user = loginUser.execute(
-            email,
-            password
+        // RNF-16: las contraseñas no se almacenan en texto plano.
+        const user =
+            loginUser.execute(
+                email,
+                password
+            );
+
+        console.log(
+            'Inicio de sesión exitoso:',
+            user.id
         );
 
         response.status(200).json({
@@ -84,6 +103,7 @@ export const loginUser = (
 
         response.status(401).json({
             ok: false,
+            code: 'INVALID_CREDENTIALS',
             message: error instanceof Error
                 ? error.message
                 : 'Correo electrónico o contraseña incorrectos'

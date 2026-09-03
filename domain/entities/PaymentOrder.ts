@@ -1,9 +1,11 @@
+import { Money } from '../value-objects/Money';
+
 export class PaymentOrder {
 
     id: number;
     auctionId: number;
     winnerId: number;
-    amount: number;
+    amount: Money;
     createdAt: Date;
     expirationDate: Date;
     status: string;
@@ -17,22 +19,21 @@ export class PaymentOrder {
         expirationDate: Date,
         status: string
     ) {
-        if (amount < 0) {
-            throw new Error(
-                'El valor de la orden de pago no puede ser negativo'
-            );
-        }
 
         this.id = id;
         this.auctionId = auctionId;
         this.winnerId = winnerId;
-        this.amount = amount;
+
+        // RN-21 y RNF-07
+        this.amount = new Money(amount);
+
         this.createdAt = createdAt;
         this.expirationDate = expirationDate;
         this.status = status;
     }
 
     confirm(): void {
+
         if (this.status === 'confirmed') {
             return;
         }
@@ -43,14 +44,17 @@ export class PaymentOrder {
             );
         }
 
+        // RN-17
         this.status = 'confirmed';
     }
 
     expire(): void {
+
         if (this.status === 'confirmed') {
             return;
         }
 
+        // RN-20
         this.status = 'expired';
     }
 }

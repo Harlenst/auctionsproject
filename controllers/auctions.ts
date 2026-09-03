@@ -23,12 +23,13 @@ export const getAuctions = (
     response: Response
 ): void => {
 
-    console.log(request.query);
+    console.log('Consultando subastas', request.query);
 
     const getAuctions =
         new GetAuctions(auctionRepository);
 
-    const result = getAuctions.execute();
+    const result =
+        getAuctions.execute();
 
     response.json({
         ok: true,
@@ -46,13 +47,13 @@ export const getAuction = (
     const getAuction =
         new GetAuction(auctionRepository);
 
-    const result = getAuction.execute(
-        Number(id)
-    );
+    const result =
+        getAuction.execute(Number(id));
 
     if (result === undefined) {
         response.status(404).json({
             ok: false,
+            code: 'AUCTION_NOT_FOUND',
             message: 'La subasta no fue encontrada'
         });
         return;
@@ -83,8 +84,11 @@ export const createAuction = (
     try {
 
         const createAuction =
-            new CreateAuction(auctionRepository);
+            new CreateAuction(
+                auctionRepository
+            );
 
+        // RN-01, RN-02 y RN-03 se validan en el dominio.
         const auction =
             createAuction.execute(
                 auctionRepository.getAll().length + 1,
@@ -98,6 +102,11 @@ export const createAuction = (
                 status
             );
 
+        console.log(
+            'Subasta creada:',
+            auction.id
+        );
+
         response.status(201).json({
             ok: true,
             data: auction
@@ -107,6 +116,7 @@ export const createAuction = (
 
         response.status(400).json({
             ok: false,
+            code: 'AUCTION_CREATION_ERROR',
             message: error instanceof Error
                 ? error.message
                 : 'No fue posible crear la subasta'
@@ -123,11 +133,14 @@ export const placeBid = (
     const { userId, amount } = request.body;
 
     const auction =
-        auctionRepository.getById(Number(id));
+        auctionRepository.getById(
+            Number(id)
+        );
 
     if (auction === undefined) {
         response.status(404).json({
             ok: false,
+            code: 'AUCTION_NOT_FOUND',
             message: 'La subasta no fue encontrada'
         });
         return;
@@ -135,22 +148,31 @@ export const placeBid = (
 
     try {
 
-        const bid = new Bid(
-            auction.bids.length + 1,
-            userId,
-            auction.id,
-            amount,
-            new Date()
-        );
+        const bid =
+            new Bid(
+                auction.bids.length + 1,
+                userId,
+                auction.id,
+                amount,
+                new Date()
+            );
 
         const placeBid =
-            new PlaceBid(auctionRepository);
+            new PlaceBid(
+                auctionRepository
+            );
 
+        // RN-06 a RN-10 se validan en Auction.
         const result =
             placeBid.execute(
                 auction,
                 bid
             );
+
+        console.log(
+            'Puja aceptada:',
+            bid.id
+        );
 
         response.status(201).json({
             ok: true,
@@ -159,8 +181,14 @@ export const placeBid = (
 
     } catch (error) {
 
+        // RN-12: registra pujas rechazadas.
+        console.log(
+            'Puja rechazada'
+        );
+
         response.status(400).json({
             ok: false,
+            code: 'BID_REJECTED',
             message: error instanceof Error
                 ? error.message
                 : 'No fue posible registrar la puja'
@@ -176,11 +204,14 @@ export const cancelAuction = (
     const { id } = request.params;
 
     const auction =
-        auctionRepository.getById(Number(id));
+        auctionRepository.getById(
+            Number(id)
+        );
 
     if (auction === undefined) {
         response.status(404).json({
             ok: false,
+            code: 'AUCTION_NOT_FOUND',
             message: 'La subasta no fue encontrada'
         });
         return;
@@ -191,8 +222,16 @@ export const cancelAuction = (
         const cancelAuction =
             new CancelAuction();
 
+        // RN-04 se valida en Auction.
         const result =
-            cancelAuction.execute(auction);
+            cancelAuction.execute(
+                auction
+            );
+
+        console.log(
+            'Subasta cancelada:',
+            auction.id
+        );
 
         response.status(200).json({
             ok: true,
@@ -203,6 +242,7 @@ export const cancelAuction = (
 
         response.status(400).json({
             ok: false,
+            code: 'AUCTION_CANCEL_ERROR',
             message: error instanceof Error
                 ? error.message
                 : 'No fue posible cancelar la subasta'
@@ -218,11 +258,14 @@ export const closeAuction = (
     const { id } = request.params;
 
     const auction =
-        auctionRepository.getById(Number(id));
+        auctionRepository.getById(
+            Number(id)
+        );
 
     if (auction === undefined) {
         response.status(404).json({
             ok: false,
+            code: 'AUCTION_NOT_FOUND',
             message: 'La subasta no fue encontrada'
         });
         return;
@@ -231,15 +274,25 @@ export const closeAuction = (
     try {
 
         const closeAuction =
-            new CloseAuction(paymentRepository);
+            new CloseAuction(
+                paymentRepository
+            );
 
+        // RN-13, RN-14, RN-15 y RN-16.
         const paymentOrder =
             closeAuction.execute(
                 auction,
-                paymentRepository.getOrderById(auction.id) === undefined
+                paymentRepository.getOrderById(
+                    auction.id
+                ) === undefined
                     ? auction.id
                     : auction.id + 1
             );
+
+        console.log(
+            'Subasta cerrada:',
+            auction.id
+        );
 
         response.status(200).json({
             ok: true,
@@ -250,6 +303,7 @@ export const closeAuction = (
 
         response.status(400).json({
             ok: false,
+            code: 'AUCTION_CLOSE_ERROR',
             message: error instanceof Error
                 ? error.message
                 : 'No fue posible cerrar la subasta'
