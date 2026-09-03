@@ -10,8 +10,13 @@ import { CloseAuction } from '../application/use-cases/CloseAuction';
 import { Bid } from '../domain/entities/Bid';
 
 import { InMemoryAuctionRepository } from '../infrastructure/repositories/InMemoryAuctionRepository';
+import { InMemoryPaymentRepository } from '../infrastructure/repositories/InMemoryPaymentRepository';
 
-const auctionRepository = new InMemoryAuctionRepository();
+const auctionRepository =
+    new InMemoryAuctionRepository();
+
+const paymentRepository =
+    new InMemoryPaymentRepository();
 
 export const getAuctions = (
     request: Request,
@@ -20,9 +25,8 @@ export const getAuctions = (
 
     console.log(request.query);
 
-    const getAuctions = new GetAuctions(
-        auctionRepository
-    );
+    const getAuctions =
+        new GetAuctions(auctionRepository);
 
     const result = getAuctions.execute();
 
@@ -39,9 +43,8 @@ export const getAuction = (
 
     const { id } = request.params;
 
-    const getAuction = new GetAuction(
-        auctionRepository
-    );
+    const getAuction =
+        new GetAuction(auctionRepository);
 
     const result = getAuction.execute(
         Number(id)
@@ -79,21 +82,21 @@ export const createAuction = (
 
     try {
 
-        const createAuction = new CreateAuction(
-            auctionRepository
-        );
+        const createAuction =
+            new CreateAuction(auctionRepository);
 
-        const auction = createAuction.execute(
-            auctionRepository.getAll().length + 1,
-            articleId,
-            sellerId,
-            categoryId,
-            basePrice,
-            minimumIncrement,
-            new Date(createdAt),
-            new Date(closingAt),
-            status
-        );
+        const auction =
+            createAuction.execute(
+                auctionRepository.getAll().length + 1,
+                articleId,
+                sellerId,
+                categoryId,
+                basePrice,
+                minimumIncrement,
+                new Date(createdAt),
+                new Date(closingAt),
+                status
+            );
 
         response.status(201).json({
             ok: true,
@@ -119,9 +122,8 @@ export const placeBid = (
     const { id } = request.params;
     const { userId, amount } = request.body;
 
-    const auction = auctionRepository.getById(
-        Number(id)
-    );
+    const auction =
+        auctionRepository.getById(Number(id));
 
     if (auction === undefined) {
         response.status(404).json({
@@ -141,14 +143,14 @@ export const placeBid = (
             new Date()
         );
 
-        const placeBid = new PlaceBid(
-            auctionRepository
-        );
+        const placeBid =
+            new PlaceBid(auctionRepository);
 
-        const result = placeBid.execute(
-            auction,
-            bid
-        );
+        const result =
+            placeBid.execute(
+                auction,
+                bid
+            );
 
         response.status(201).json({
             ok: true,
@@ -173,9 +175,8 @@ export const cancelAuction = (
 
     const { id } = request.params;
 
-    const auction = auctionRepository.getById(
-        Number(id)
-    );
+    const auction =
+        auctionRepository.getById(Number(id));
 
     if (auction === undefined) {
         response.status(404).json({
@@ -187,11 +188,11 @@ export const cancelAuction = (
 
     try {
 
-        const cancelAuction = new CancelAuction();
+        const cancelAuction =
+            new CancelAuction();
 
-        const result = cancelAuction.execute(
-            auction
-        );
+        const result =
+            cancelAuction.execute(auction);
 
         response.status(200).json({
             ok: true,
@@ -216,9 +217,8 @@ export const closeAuction = (
 
     const { id } = request.params;
 
-    const auction = auctionRepository.getById(
-        Number(id)
-    );
+    const auction =
+        auctionRepository.getById(Number(id));
 
     if (auction === undefined) {
         response.status(404).json({
@@ -230,12 +230,16 @@ export const closeAuction = (
 
     try {
 
-        const closeAuction = new CloseAuction();
+        const closeAuction =
+            new CloseAuction(paymentRepository);
 
-        const paymentOrder = closeAuction.execute(
-            auction,
-            auction.id
-        );
+        const paymentOrder =
+            closeAuction.execute(
+                auction,
+                paymentRepository.getOrderById(auction.id) === undefined
+                    ? auction.id
+                    : auction.id + 1
+            );
 
         response.status(200).json({
             ok: true,

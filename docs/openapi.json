@@ -1,0 +1,214 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "API Plataforma de Subastas",
+        "version": "1.0.0",
+        "description": "API para la gestión de usuarios, subastas, pujas y órdenes de pago."
+    },
+    "servers": [
+        {
+            "url": "http://localhost:5000/api/v1"
+        }
+    ],
+    "paths": {
+        "/users": {
+            "post": {
+                "summary": "Registrar usuario",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "example": {
+                                "name": "Juan Pérez",
+                                "email": "juan@example.com",
+                                "password": "123456"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Usuario registrado"
+                    },
+                    "400": {
+                        "description": "Error al registrar usuario"
+                    }
+                }
+            }
+        },
+        "/auth/login": {
+            "post": {
+                "summary": "Iniciar sesión",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "example": {
+                                "email": "juan@example.com",
+                                "password": "123456"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Inicio de sesión exitoso"
+                    },
+                    "401": {
+                        "description": "Credenciales incorrectas"
+                    }
+                }
+            }
+        },
+        "/auctions": {
+            "get": {
+                "summary": "Obtener todas las subastas",
+                "responses": {
+                    "200": {
+                        "description": "Lista de subastas"
+                    }
+                }
+            },
+            "post": {
+                "summary": "Crear subasta",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "example": {
+                                "articleId": 1,
+                                "sellerId": 100,
+                                "categoryId": 1,
+                                "basePrice": 100000,
+                                "minimumIncrement": 10000,
+                                "createdAt": "2026-09-03T10:00:00",
+                                "closingAt": "2026-09-04T10:00:00",
+                                "status": "open"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Subasta creada"
+                    },
+                    "400": {
+                        "description": "Datos inválidos"
+                    }
+                }
+            }
+        },
+        "/auctions/{id}": {
+            "get": {
+                "summary": "Obtener una subasta",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Subasta encontrada"
+                    },
+                    "404": {
+                        "description": "Subasta no encontrada"
+                    }
+                }
+            }
+        },
+        "/auctions/{id}/bids": {
+            "post": {
+                "summary": "Registrar una puja",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "example": {
+                                "userId": 200,
+                                "amount": 100000
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Puja aceptada"
+                    },
+                    "400": {
+                        "description": "Puja rechazada"
+                    },
+                    "404": {
+                        "description": "Subasta no encontrada"
+                    }
+                }
+            }
+        },
+        "/auctions/{id}/cancel": {
+            "patch": {
+                "summary": "Cancelar una subasta",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Subasta cancelada"
+                    },
+                    "400": {
+                        "description": "No se puede cancelar"
+                    },
+                    "404": {
+                        "description": "Subasta no encontrada"
+                    }
+                }
+            }
+        },
+        "/auctions/{id}/close": {
+            "patch": {
+                "summary": "Cerrar una subasta",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Subasta cerrada"
+                    },
+                    "400": {
+                        "description": "No fue posible cerrar la subasta"
+                    },
+                    "404": {
+                        "description": "Subasta no encontrada"
+                    }
+                }
+            }
+        }
+    }
+}

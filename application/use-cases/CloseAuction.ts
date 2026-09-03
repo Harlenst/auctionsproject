@@ -1,7 +1,14 @@
 import { Auction } from '../../domain/entities/Auction';
 import { PaymentOrder } from '../../domain/entities/PaymentOrder';
+import { PaymentRepository } from '../ports/PaymentRepository';
 
 export class CloseAuction {
+
+    private repository: PaymentRepository;
+
+    constructor(repository: PaymentRepository) {
+        this.repository = repository;
+    }
 
     execute(
         auction: Auction,
@@ -35,6 +42,8 @@ export class CloseAuction {
             paymentInformation.expirationDate,
             'pending'
         );
+
+        this.repository.saveOrder(paymentOrder);
 
         return paymentOrder;
     }
