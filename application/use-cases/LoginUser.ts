@@ -1,32 +1,34 @@
-import {
-    pbkdf2Sync
-} from 'crypto';
+
+import { pbkdf2Sync } from 'crypto';
 
 import { UserRepository } from '../ports/UserRepository';
+import { JwtService } from '../../infrastructure/security/JwtService';
+import { HttpError } from '../errors/HttpError';
 
 export class LoginUser {
-
     private repository: UserRepository;
+    private jwtService: JwtService;
 
-    constructor(repository: UserRepository) {
+    constructor(
+        repository: UserRepository,
+        jwtService: JwtService
+    ) {
         this.repository = repository;
+        this.jwtService = jwtService;
     }
 
-    execute(
-        email: string,
-        password: string
-    ) {
-
+    execute(email: string, password: string) {
         const user = this.repository.getByEmail(email);
 
         if (user === undefined) {
-            throw new Error(
+            throw new HttpError(
+                401,
+                'INVALID_CREDENTIALS',
                 'Correo electrónico o contraseña incorrectos'
             );
         }
 
         const parts = user.password.split(':');
-
         const salt = parts[0];
         const storedHash = parts[1];
 
@@ -39,11 +41,21 @@ export class LoginUser {
         ).toString('hex');
 
         if (passwordHash !== storedHash) {
-            throw new Error(
+            throw new HttpError(
+                401,
+                'INVALID_CREDENTIALS',
                 'Correo electrónico o contraseña incorrectos'
             );
         }
 
-        return user;
+        const token = this.jwtService.generateToken({
+            userId: user.id,
+            email: user.email.getValue()
+        });
+
+        return {
+            user,
+            token
+        };
     }
 }

@@ -1,8 +1,8 @@
+
 import { Auction } from '../../domain/entities/Auction';
 import { AuctionRepository } from '../ports/AuctionRepository';
 
 export class CreateAuction {
-
     private repository: AuctionRepository;
 
     constructor(repository: AuctionRepository) {
@@ -10,7 +10,6 @@ export class CreateAuction {
     }
 
     execute(
-        id: number,
         articleId: number,
         sellerId: number,
         categoryId: number,
@@ -20,6 +19,7 @@ export class CreateAuction {
         closingAt: Date,
         status: string
     ): Auction {
+        const id = this.repository.generateId();
 
         const auction = new Auction(
             id,

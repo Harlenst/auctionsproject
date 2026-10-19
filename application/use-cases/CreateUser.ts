@@ -15,7 +15,6 @@ export class CreateUser {
     }
 
     execute(
-        id: number,
         name: string,
         email: string,
         password: string
@@ -42,7 +41,7 @@ export class CreateUser {
         const passwordStored = `${salt}:${passwordHash}`;
 
         const user = new User(
-            id,
+            this.repository.generateId(),
             name,
             email,
             passwordStored

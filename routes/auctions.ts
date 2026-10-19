@@ -1,4 +1,6 @@
+
 import express, { Router } from 'express';
+
 import {
     createAuction,
     getAuctions,
@@ -8,13 +10,18 @@ import {
     closeAuction
 } from '../controllers/auctions';
 
+import { authMiddleware } from '../middleware/authMiddleware';
+
 const auctionRouter: Router = express.Router();
 
+// Consultas públicas.
 auctionRouter.get('/auctions', getAuctions);
 auctionRouter.get('/auctions/:id', getAuction);
-auctionRouter.post('/auctions', createAuction);
-auctionRouter.post('/auctions/:id/bids', placeBid);
-auctionRouter.patch('/auctions/:id/cancel', cancelAuction);
-auctionRouter.patch('/auctions/:id/close', closeAuction);
+
+// Operaciones que requieren autenticación.
+auctionRouter.post('/auctions', authMiddleware, createAuction);
+auctionRouter.post('/auctions/:id/bids', authMiddleware, placeBid);
+auctionRouter.patch('/auctions/:id/cancel', authMiddleware, cancelAuction);
+auctionRouter.patch('/auctions/:id/close', authMiddleware, closeAuction);
 
 export default auctionRouter;

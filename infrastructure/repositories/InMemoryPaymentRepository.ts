@@ -35,4 +35,9 @@ export class InMemoryPaymentRepository
             this.events.push(event);
         }
     }
+    getOrdersByWinnerId(winnerId: number): PaymentOrder[] {
+    return this.orders.filter(
+        (order) => order.winnerId === winnerId
+    );
+}
 }
