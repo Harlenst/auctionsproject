@@ -1,35 +1,29 @@
+
 import { Request, Response } from 'express';
 
+import { AuthenticatedRequest } from '../middleware/authMiddleware';
+import { HttpError } from '../application/errors/HttpError';
 import { CreateAuction } from '../application/use-cases/CreateAuction';
 import { GetAuctions } from '../application/use-cases/GetAuctions';
 import { GetAuction } from '../application/use-cases/GetAuction';
 import { PlaceBid } from '../application/use-cases/PlaceBid';
 import { CancelAuction } from '../application/use-cases/CancelAuction';
 import { CloseAuction } from '../application/use-cases/CloseAuction';
-
+import { paymentRepository } from '../infrastructure/repositories/repositories';
 import { Bid } from '../domain/entities/Bid';
 
 import { InMemoryAuctionRepository } from '../infrastructure/repositories/InMemoryAuctionRepository';
-import { InMemoryPaymentRepository } from '../infrastructure/repositories/InMemoryPaymentRepository';
 
-const auctionRepository =
-    new InMemoryAuctionRepository();
-
-const paymentRepository =
-    new InMemoryPaymentRepository();
+const auctionRepository = new InMemoryAuctionRepository();
 
 export const getAuctions = (
     request: Request,
     response: Response
 ): void => {
-
     console.log('Consultando subastas', request.query);
 
-    const getAuctions =
-        new GetAuctions(auctionRepository);
-
-    const result =
-        getAuctions.execute();
+    const getAuctions = new GetAuctions(auctionRepository);
+    const result = getAuctions.execute();
 
     response.json({
         ok: true,
@@ -41,14 +35,10 @@ export const getAuction = (
     request: Request,
     response: Response
 ): void => {
-
     const { id } = request.params;
 
-    const getAuction =
-        new GetAuction(auctionRepository);
-
-    const result =
-        getAuction.execute(Number(id));
+    const getAuction = new GetAuction(auctionRepository);
+    const result = getAuction.execute(Number(id));
 
     if (result === undefined) {
         response.status(404).json({
@@ -69,10 +59,18 @@ export const createAuction = (
     request: Request,
     response: Response
 ): void => {
+    const user = (request as AuthenticatedRequest).user;
+
+    if (!user) {
+        throw new HttpError(
+            401,
+            'UNAUTHORIZED',
+            'Debes iniciar sesión'
+        );
+    }
 
     const {
         articleId,
-        sellerId,
         categoryId,
         basePrice,
         minimumIncrement,
@@ -82,60 +80,56 @@ export const createAuction = (
     } = request.body;
 
     try {
+        const createAuction = new CreateAuction(auctionRepository);
 
-        const createAuction =
-            new CreateAuction(
-                auctionRepository
-            );
-
-        // RN-01, RN-02 y RN-03 se validan en el dominio.
-        const auction =
-            createAuction.execute(
-                auctionRepository.getAll().length + 1,
-                articleId,
-                sellerId,
-                categoryId,
-                basePrice,
-                minimumIncrement,
-                new Date(createdAt),
-                new Date(closingAt),
-                status
-            );
-
-        console.log(
-            'Subasta creada:',
-            auction.id
+        // El vendedor se obtiene del token, no del cuerpo.
+        const auction = createAuction.execute(
+            articleId,
+            user.userId,
+            categoryId,
+            basePrice,
+            minimumIncrement,
+            new Date(createdAt),
+            new Date(closingAt),
+            status
         );
+
+        console.log('Subasta creada:', auction.id);
 
         response.status(201).json({
             ok: true,
             data: auction
         });
-
     } catch (error) {
+        if (error instanceof Error) {
+            throw new HttpError(
+                400,
+                'AUCTION_CREATION_ERROR',
+                error.message
+            );
+        }
 
-        response.status(400).json({
-            ok: false,
-            code: 'AUCTION_CREATION_ERROR',
-            message: error instanceof Error
-                ? error.message
-                : 'No fue posible crear la subasta'
-        });
+        throw error;
     }
 };
-
 export const placeBid = (
     request: Request,
     response: Response
 ): void => {
-
     const { id } = request.params;
-    const { userId, amount } = request.body;
+    const user = (request as AuthenticatedRequest).user;
 
-    const auction =
-        auctionRepository.getById(
-            Number(id)
+    if (!user) {
+        throw new HttpError(
+            401,
+            'UNAUTHORIZED',
+            'Debes iniciar sesión'
         );
+    }
+
+    const { amount } = request.body;
+
+    const auction = auctionRepository.getById(Number(id));
 
     if (auction === undefined) {
         response.status(404).json({
@@ -147,52 +141,33 @@ export const placeBid = (
     }
 
     try {
-
-        const bid =
-            new Bid(
-                auction.bids.length + 1,
-                userId,
-                auction.id,
-                amount,
-                new Date()
-            );
-
-        const placeBid =
-            new PlaceBid(
-                auctionRepository
-            );
-
-        // RN-06 a RN-10 se validan en Auction.
-        const result =
-            placeBid.execute(
-                auction,
-                bid
-            );
-
-        console.log(
-            'Puja aceptada:',
-            bid.id
+        const bid = new Bid(
+            auctionRepository.generateBidId(),
+            user.userId,
+            auction.id,
+            amount,
+            new Date()
         );
+
+        const placeBid = new PlaceBid(auctionRepository);
+        const result = placeBid.execute(auction, bid);
+
+        console.log('Puja aceptada:', bid.id);
 
         response.status(201).json({
             ok: true,
             data: result
         });
-
     } catch (error) {
+        if (error instanceof Error) {
+            throw new HttpError(
+                400,
+                'BID_REJECTED',
+                error.message
+            );
+        }
 
-        // RN-12: registra pujas rechazadas.
-        console.log(
-            'Puja rechazada'
-        );
-
-        response.status(400).json({
-            ok: false,
-            code: 'BID_REJECTED',
-            message: error instanceof Error
-                ? error.message
-                : 'No fue posible registrar la puja'
-        });
+        throw error;
     }
 };
 
@@ -200,13 +175,18 @@ export const cancelAuction = (
     request: Request,
     response: Response
 ): void => {
-
     const { id } = request.params;
+    const user = (request as AuthenticatedRequest).user;
 
-    const auction =
-        auctionRepository.getById(
-            Number(id)
+    if (!user) {
+        throw new HttpError(
+            401,
+            'UNAUTHORIZED',
+            'Debes iniciar sesión'
         );
+    }
+
+    const auction = auctionRepository.getById(Number(id));
 
     if (auction === undefined) {
         response.status(404).json({
@@ -217,36 +197,39 @@ export const cancelAuction = (
         return;
     }
 
+    if (auction.sellerId !== user.userId) {
+        response.status(403).json({
+            ok: false,
+            code: 'FORBIDDEN',
+            message: 'Solo el vendedor puede cancelar su subasta'
+        });
+        return;
+    }
+
     try {
+        const cancelAuction = new CancelAuction();
 
-        const cancelAuction =
-            new CancelAuction();
-
-        // RN-04 se valida en Auction.
-        const result =
-            cancelAuction.execute(
-                auction
-            );
-
-        console.log(
-            'Subasta cancelada:',
-            auction.id
+        const result = cancelAuction.execute(
+            auction,
+            user.userId
         );
+
+        console.log('Subasta cancelada:', auction.id);
 
         response.status(200).json({
             ok: true,
             data: result
         });
-
     } catch (error) {
+        if (error instanceof Error) {
+            throw new HttpError(
+                400,
+                'AUCTION_CANCEL_ERROR',
+                error.message
+            );
+        }
 
-        response.status(400).json({
-            ok: false,
-            code: 'AUCTION_CANCEL_ERROR',
-            message: error instanceof Error
-                ? error.message
-                : 'No fue posible cancelar la subasta'
-        });
+        throw error;
     }
 };
 
@@ -254,13 +237,18 @@ export const closeAuction = (
     request: Request,
     response: Response
 ): void => {
-
     const { id } = request.params;
+    const user = (request as AuthenticatedRequest).user;
 
-    const auction =
-        auctionRepository.getById(
-            Number(id)
+    if (!user) {
+        throw new HttpError(
+            401,
+            'UNAUTHORIZED',
+            'Debes iniciar sesión'
         );
+    }
+
+    const auction = auctionRepository.getById(Number(id));
 
     if (auction === undefined) {
         response.status(404).json({
@@ -271,42 +259,40 @@ export const closeAuction = (
         return;
     }
 
+    if (auction.sellerId !== user.userId) {
+        response.status(403).json({
+            ok: false,
+            code: 'FORBIDDEN',
+            message: 'Solo el vendedor puede cerrar su subasta'
+        });
+        return;
+    }
+
     try {
+        const closeAuction = new CloseAuction(paymentRepository);
 
-        const closeAuction =
-            new CloseAuction(
-                paymentRepository
-            );
-
-        // RN-13, RN-14, RN-15 y RN-16.
-        const paymentOrder =
-            closeAuction.execute(
-                auction,
-                paymentRepository.getOrderById(
-                    auction.id
-                ) === undefined
-                    ? auction.id
-                    : auction.id + 1
-            );
-
-        console.log(
-            'Subasta cerrada:',
-            auction.id
+        const paymentOrder = closeAuction.execute(
+            auction,
+            paymentRepository.getOrderById(auction.id) === undefined
+                ? auction.id
+                : auction.id + 1
         );
+
+        console.log('Subasta cerrada:', auction.id);
 
         response.status(200).json({
             ok: true,
             data: paymentOrder
         });
-
     } catch (error) {
+        if (error instanceof Error) {
+            throw new HttpError(
+                400,
+                'AUCTION_CLOSE_ERROR',
+                error.message
+            );
+        }
 
-        response.status(400).json({
-            ok: false,
-            code: 'AUCTION_CLOSE_ERROR',
-            message: error instanceof Error
-                ? error.message
-                : 'No fue posible cerrar la subasta'
-        });
+        throw error;
     }
 };

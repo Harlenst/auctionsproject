@@ -1,44 +1,30 @@
+
 import { Request, Response } from 'express';
 
+import { HttpError } from '../application/errors/HttpError';
+import { JwtService } from '../infrastructure/security/JwtService';
 import { CreateUser } from '../application/use-cases/CreateUser';
 import { LoginUser } from '../application/use-cases/LoginUser';
-
 import { InMemoryUserRepository } from '../infrastructure/repositories/InMemoryUserRepository';
 
-const userRepository =
-    new InMemoryUserRepository();
+const userRepository = new InMemoryUserRepository();
 
 export const registerUser = (
     request: Request,
     response: Response
 ): void => {
-
-    const {
-        name,
-        email,
-        password
-    } = request.body;
+    const { name, email, password } = request.body;
 
     try {
+        const createUser = new CreateUser(userRepository);
 
-        const createUser =
-            new CreateUser(
-                userRepository
-            );
-
-        // RN-22: correo único.
-        const user =
-            createUser.execute(
-                userRepository.getAll().length + 1,
-                name,
-                email,
-                password
-            );
-
-        console.log(
-            'Usuario registrado:',
-            user.id
+        const user = createUser.execute(
+            name,
+            email,
+            password
         );
+
+        console.log('Usuario registrado:', user.id);
 
         response.status(201).json({
             ok: true,
@@ -48,16 +34,16 @@ export const registerUser = (
                 email: user.email.getValue()
             }
         });
-
     } catch (error) {
+        if (error instanceof Error) {
+            throw new HttpError(
+                400,
+                'USER_REGISTRATION_ERROR',
+                error.message
+            );
+        }
 
-        response.status(400).json({
-            ok: false,
-            code: 'USER_REGISTRATION_ERROR',
-            message: error instanceof Error
-                ? error.message
-                : 'No fue posible registrar el usuario'
-        });
+        throw error;
     }
 };
 
@@ -65,48 +51,28 @@ export const loginUser = (
     request: Request,
     response: Response
 ): void => {
+    const { email, password } = request.body;
 
-    const {
+    const jwtService = new JwtService();
+    const loginUserUseCase = new LoginUser(
+        userRepository,
+        jwtService
+    );
+
+    const { user, token } = loginUserUseCase.execute(
         email,
         password
-    } = request.body;
+    );
 
-    try {
+    console.log('Inicio de sesión exitoso:', user.id);
 
-        const loginUser =
-            new LoginUser(
-                userRepository
-            );
-
-        // RNF-16: las contraseñas no se almacenan en texto plano.
-        const user =
-            loginUser.execute(
-                email,
-                password
-            );
-
-        console.log(
-            'Inicio de sesión exitoso:',
-            user.id
-        );
-
-        response.status(200).json({
-            ok: true,
-            data: {
-                id: user.id,
-                name: user.name,
-                email: user.email.getValue()
-            }
-        });
-
-    } catch (error) {
-
-        response.status(401).json({
-            ok: false,
-            code: 'INVALID_CREDENTIALS',
-            message: error instanceof Error
-                ? error.message
-                : 'Correo electrónico o contraseña incorrectos'
-        });
-    }
+    response.status(200).json({
+        ok: true,
+        data: {
+            id: user.id,
+            name: user.name,
+            email: user.email.getValue(),
+            token
+        }
+    });
 };
