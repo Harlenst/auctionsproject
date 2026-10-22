@@ -2,29 +2,22 @@
 import { Request, Response } from 'express';
 
 import { HttpError } from '../application/errors/HttpError';
-import { JwtService } from '../infrastructure/security/JwtService';
 import { CreateUser } from '../application/use-cases/CreateUser';
 import { LoginUser } from '../application/use-cases/LoginUser';
-import { InMemoryUserRepository } from '../infrastructure/repositories/InMemoryUserRepository';
+import { MongoUserRepository } from '../infrastructure/repositories/MongoUserRepository';
+import { JwtService } from '../infrastructure/security/JwtService';
 
-const userRepository = new InMemoryUserRepository();
+const userRepository = new MongoUserRepository();
 
-export const registerUser = (
+export const registerUser = async (
     request: Request,
     response: Response
-): void => {
+): Promise<void> => {
     const { name, email, password } = request.body;
 
     try {
         const createUser = new CreateUser(userRepository);
-
-        const user = createUser.execute(
-            name,
-            email,
-            password
-        );
-
-        console.log('Usuario registrado:', user.id);
+        const user = await createUser.execute(name, email, password);
 
         response.status(201).json({
             ok: true,
@@ -35,6 +28,10 @@ export const registerUser = (
             }
         });
     } catch (error) {
+        if (error instanceof HttpError) {
+            throw error;
+        }
+
         if (error instanceof Error) {
             throw new HttpError(
                 400,
@@ -47,24 +44,18 @@ export const registerUser = (
     }
 };
 
-export const loginUser = (
+export const loginUser = async (
     request: Request,
     response: Response
-): void => {
+): Promise<void> => {
     const { email, password } = request.body;
 
-    const jwtService = new JwtService();
     const loginUserUseCase = new LoginUser(
         userRepository,
-        jwtService
+        new JwtService()
     );
 
-    const { user, token } = loginUserUseCase.execute(
-        email,
-        password
-    );
-
-    console.log('Inicio de sesión exitoso:', user.id);
+    const { user, token } = await loginUserUseCase.execute(email, password);
 
     response.status(200).json({
         ok: true,

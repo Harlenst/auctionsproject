@@ -1,5 +1,5 @@
 
-import { pbkdf2Sync } from 'crypto';
+import { pbkdf2Sync, timingSafeEqual } from 'crypto';
 
 import { UserRepository } from '../ports/UserRepository';
 import { JwtService } from '../../infrastructure/security/JwtService';
@@ -17,8 +17,11 @@ export class LoginUser {
         this.jwtService = jwtService;
     }
 
-    execute(email: string, password: string) {
-        const user = this.repository.getByEmail(email);
+    async execute(
+        email: string,
+        password: string
+    ): Promise<{ user: import('../../domain/entities/User').User; token: string }> {
+        const user = await this.repository.getByEmail(email);
 
         if (user === undefined) {
             throw new HttpError(
@@ -29,8 +32,16 @@ export class LoginUser {
         }
 
         const parts = user.password.split(':');
-        const salt = parts[0];
-        const storedHash = parts[1];
+
+        if (parts.length !== 2 || !parts[0] || !parts[1]) {
+            throw new HttpError(
+                401,
+                'INVALID_CREDENTIALS',
+                'Correo electrónico o contraseña incorrectos'
+            );
+        }
+
+        const [salt, storedHash] = parts;
 
         const passwordHash = pbkdf2Sync(
             password,
@@ -38,9 +49,14 @@ export class LoginUser {
             100000,
             64,
             'sha512'
-        ).toString('hex');
+        );
 
-        if (passwordHash !== storedHash) {
+        const expectedHash = Buffer.from(storedHash, 'hex');
+
+        if (
+            expectedHash.length !== passwordHash.length ||
+            !timingSafeEqual(passwordHash, expectedHash)
+        ) {
             throw new HttpError(
                 401,
                 'INVALID_CREDENTIALS',
@@ -53,9 +69,6 @@ export class LoginUser {
             email: user.email.getValue()
         });
 
-        return {
-            user,
-            token
-        };
+        return { user, token };
     }
 }

@@ -1,26 +1,21 @@
-import {
-    randomBytes,
-    pbkdf2Sync
-} from 'crypto';
 
+import { randomBytes, pbkdf2Sync } from 'crypto';
 import { User } from '../../domain/entities/User';
 import { UserRepository } from '../ports/UserRepository';
 
 export class CreateUser {
-
     private repository: UserRepository;
 
     constructor(repository: UserRepository) {
         this.repository = repository;
     }
 
-    execute(
+    async execute(
         name: string,
         email: string,
         password: string
-    ): User {
-
-        const existingUser = this.repository.getByEmail(email);
+    ): Promise<User> {
+        const existingUser = await this.repository.getByEmail(email);
 
         if (existingUser !== undefined) {
             throw new Error(
@@ -41,13 +36,13 @@ export class CreateUser {
         const passwordStored = `${salt}:${passwordHash}`;
 
         const user = new User(
-            this.repository.generateId(),
+            await this.repository.generateId(),
             name,
             email,
             passwordStored
         );
 
-        this.repository.save(user);
+        await this.repository.save(user);
 
         return user;
     }

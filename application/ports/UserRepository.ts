@@ -1,8 +1,10 @@
+
 import { User } from '../../domain/entities/User';
+
 export interface UserRepository {
-    getAll(): User[];
-    getById(id: number): User | undefined;
-    getByEmail(email: string): User | undefined;
-    generateId(): number;
-    save(user: User): void;
+  getAll(): Promise<User[]>;
+  getById(id: number): Promise<User | undefined>;
+  getByEmail(email: string): Promise<User | undefined>;
+  generateId(): Promise<number>;
+  save(user: User): Promise<void>;
 }

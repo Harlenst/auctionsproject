@@ -6,31 +6,39 @@ export class InMemoryUserRepository implements UserRepository {
     private users: User[] = [];
     private lastId = 0;
 
-    getAll(): User[] {
-        return this.users;
+    async getAll(): Promise<User[]> {
+        return [...this.users];
     }
 
-    getById(id: number): User | undefined {
+    async getById(id: number): Promise<User | undefined> {
         return this.users.find((user) => user.id === id);
     }
 
-    getByEmail(email: string): User | undefined {
+    async getByEmail(email: string): Promise<User | undefined> {
+        const normalizedEmail = email.trim().toLowerCase();
+
         return this.users.find(
-            (user) => user.email.getValue() === email
+            (user) => user.email.getValue().toLowerCase() === normalizedEmail
         );
     }
 
-    generateId(): number {
+    async generateId(): Promise<number> {
         this.lastId += 1;
         return this.lastId;
     }
 
-    save(user: User): void {
-        if (this.getById(user.id) !== undefined) {
+    async save(user: User): Promise<void> {
+        if (this.users.some((existing) => existing.id === user.id)) {
             throw new Error('Ya existe un usuario con ese ID');
         }
 
-        if (this.getByEmail(user.email.getValue()) !== undefined) {
+        if (
+            this.users.some(
+                (existing) =>
+                    existing.email.getValue().toLowerCase() ===
+                    user.email.getValue().toLowerCase()
+            )
+        ) {
             throw new Error('Ya existe un usuario con ese correo');
         }
 
