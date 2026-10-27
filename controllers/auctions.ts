@@ -1,6 +1,6 @@
 
 import { Request, Response } from 'express';
-
+import { getIO } from '../infrastructure/websocket/SocketServer';
 import { AuthenticatedRequest } from '../middleware/authMiddleware';
 import { HttpError } from '../application/errors/HttpError';
 
@@ -161,7 +161,17 @@ export const placeBid = async (
         const useCase = new PlaceBid(auctionRepository);
         const result = await useCase.execute(auction, bid);
 
+        // Notificar a todos los participantes de esta subasta
+        getIO()
+            .to(`auction:${auction.id}`)
+            .emit('bid:created', {
+                auctionId: auction.id,
+                bid: result,
+                message: 'Se ha registrado una nueva oferta'
+            });
+
         console.log('Puja aceptada:', bid.id);
+        console.log('Notificación Socket.IO enviada:', auction.id);
 
         response.status(201).json({
             ok: true,
