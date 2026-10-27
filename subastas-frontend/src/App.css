@@ -1,0 +1,291 @@
+
+.app {
+  width: 100%;
+  overflow: hidden;
+}
+
+.navbar {
+  height: 82px;
+  padding: 0 8%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  border-bottom: 1px solid #edf0f5;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 21px;
+  font-weight: 800;
+}
+
+.brand-icon {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  background: #635bff;
+  color: white;
+  border-radius: 11px;
+}
+
+.brand-highlight {
+  color: #635bff;
+}
+
+.navbar nav {
+  display: flex;
+  gap: 32px;
+}
+
+.navbar nav a {
+  color: #667085;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.nav-actions {
+  display: flex;
+  gap: 12px;
+}
+
+button, .hero-button {
+  border: 0;
+  border-radius: 9px;
+  padding: 13px 19px;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.login-button {
+  background: transparent;
+  color: #344054;
+}
+
+.register-button, .hero-button {
+  background: #635bff;
+  color: white;
+}
+
+.hero {
+  min-height: 490px;
+  padding: 75px 10%;
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  align-items: center;
+  gap: 50px;
+  background: linear-gradient(120deg, #f4f3ff, #fafbff);
+}
+
+.eyebrow {
+  color: #635bff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+}
+
+.hero h1 {
+  margin: 22px 0;
+  font-size: clamp(38px, 5vw, 59px);
+  line-height: 1.13;
+  letter-spacing: -2px;
+}
+
+.hero h1 span {
+  color: #635bff;
+}
+
+.hero-content p, .section-heading p {
+  max-width: 490px;
+  color: #667085;
+  line-height: 1.8;
+  font-size: 15px;
+}
+
+.hero-button {
+  display: inline-block;
+  margin-top: 27px;
+  text-decoration: none;
+}
+
+.hero-card {
+  background: white;
+  padding: 12px;
+  border-radius: 20px;
+  box-shadow: 0 25px 65px #33305b20;
+  transform: rotate(2deg);
+}
+
+.hero-card img {
+  width: 100%;
+  height: 260px;
+  object-fit: cover;
+  border-radius: 13px;
+}
+
+.hero-card-info {
+  padding: 17px 10px 12px;
+}
+
+.hero-card-info span {
+  color: #635bff;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.hero-card-info h3 {
+  margin: 8px 0;
+  font-size: 20px;
+}
+
+.hero-card-info p {
+  color: #667085;
+  font-size: 13px;
+}
+
+.auction-section, .how-section {
+  padding: 85px 10%;
+}
+
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.section-heading h2, .how-section h2 {
+  margin: 12px 0;
+  font-size: 32px;
+}
+
+.live-label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #475467;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.live-dot {
+  width: 9px;
+  height: 9px;
+  background: #16b981;
+  border-radius: 50%;
+}
+
+.empty-state {
+  margin-top: 40px;
+  padding: 55px 20px;
+  text-align: center;
+  background: #fff;
+  border: 1px dashed #d8dce8;
+  border-radius: 17px;
+}
+
+.empty-icon {
+  font-size: 40px;
+  color: #635bff;
+}
+
+.empty-state h3 {
+  margin: 15px 0 9px;
+}
+
+.empty-state p {
+  max-width: 480px;
+  margin: auto;
+  color: #667085;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.how-section {
+  background: #fff;
+  text-align: center;
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 25px;
+  margin-top: 40px;
+  text-align: left;
+}
+
+.steps article {
+  padding: 28px;
+  border: 1px solid #edf0f5;
+  border-radius: 15px;
+}
+
+.steps article span {
+  color: #635bff;
+  font-size: 25px;
+  font-weight: 800;
+}
+
+.steps h3 {
+  margin: 17px 0 9px;
+}
+
+.steps p {
+  color: #667085;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+footer {
+  padding: 35px 10%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #17172b;
+  color: white;
+}
+
+footer p {
+  color: #b5b5c7;
+  font-size: 13px;
+}
+
+@media (max-width: 850px) {
+  .navbar {
+    padding: 18px 5%;
+    height: auto;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+
+  .navbar nav {
+    display: none;
+  }
+
+  .hero {
+    grid-template-columns: 1fr;
+    padding: 60px 7%;
+  }
+
+  .hero-visual {
+    max-width: 500px;
+  }
+
+  .auction-section, .how-section {
+    padding: 60px 7%;
+  }
+
+  .steps {
+    grid-template-columns: 1fr;
+  }
+
+  footer {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+  }
+}
