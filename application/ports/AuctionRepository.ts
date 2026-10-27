@@ -2,9 +2,9 @@
 import { Auction } from '../../domain/entities/Auction';
 
 export interface AuctionRepository {
-    getAll(): Auction[];
-    getById(id: number): Auction | undefined;
-    generateId(): number;
-    generateBidId(): number;
-    save(auction: Auction): void;
+    getAll(): Promise<Auction[]>;
+    getById(id: number): Promise<Auction | undefined>;
+    generateId(): Promise<number>;
+    generateBidId(): Promise<number>;
+    save(auction: Auction): Promise<void>;
 }

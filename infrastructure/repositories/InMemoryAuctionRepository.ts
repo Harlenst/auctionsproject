@@ -3,33 +3,38 @@ import { Auction } from '../../domain/entities/Auction';
 import { AuctionRepository } from '../../application/ports/AuctionRepository';
 
 export class InMemoryAuctionRepository implements AuctionRepository {
+
     private auctions: Auction[] = [];
     private lastId = 0;
     private lastBidId = 0;
 
-    getAll(): Auction[] {
+    async getAll(): Promise<Auction[]> {
         return this.auctions;
     }
 
-    getById(id: number): Auction | undefined {
-        return this.auctions.find((auction) => auction.id === id);
+    async getById(id: number): Promise<Auction | undefined> {
+        return this.auctions.find(auction => auction.id === id);
     }
 
-    generateId(): number {
-        this.lastId += 1;
+    async generateId(): Promise<number> {
+        this.lastId++;
         return this.lastId;
     }
 
-    generateBidId(): number {
-        this.lastBidId += 1;
+    async generateBidId(): Promise<number> {
+        this.lastBidId++;
         return this.lastBidId;
     }
 
-    save(auction: Auction): void {
-        const existingAuction = this.getById(auction.id);
+    async save(auction: Auction): Promise<void> {
+        const index = this.auctions.findIndex(
+            existing => existing.id === auction.id
+        );
 
-        if (existingAuction === undefined) {
+        if (index === -1) {
             this.auctions.push(auction);
+        } else {
+            this.auctions[index] = auction;
         }
 
         this.lastId = Math.max(this.lastId, auction.id);

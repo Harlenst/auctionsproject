@@ -9,7 +9,7 @@ export class CreateAuction {
         this.repository = repository;
     }
 
-    execute(
+    async execute(
         articleId: number,
         sellerId: number,
         categoryId: number,
@@ -18,8 +18,9 @@ export class CreateAuction {
         createdAt: Date,
         closingAt: Date,
         status: string
-    ): Auction {
-        const id = this.repository.generateId();
+    ): Promise<Auction> {
+
+        const id = await this.repository.generateId();
 
         const auction = new Auction(
             id,
@@ -33,7 +34,7 @@ export class CreateAuction {
             status
         );
 
-        this.repository.save(auction);
+        await this.repository.save(auction);
 
         return auction;
     }

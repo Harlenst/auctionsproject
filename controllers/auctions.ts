@@ -3,27 +3,30 @@ import { Request, Response } from 'express';
 
 import { AuthenticatedRequest } from '../middleware/authMiddleware';
 import { HttpError } from '../application/errors/HttpError';
+
 import { CreateAuction } from '../application/use-cases/CreateAuction';
 import { GetAuctions } from '../application/use-cases/GetAuctions';
 import { GetAuction } from '../application/use-cases/GetAuction';
 import { PlaceBid } from '../application/use-cases/PlaceBid';
 import { CancelAuction } from '../application/use-cases/CancelAuction';
 import { CloseAuction } from '../application/use-cases/CloseAuction';
+
 import { paymentRepository } from '../infrastructure/repositories/repositories';
+import { MongoAuctionRepository } from '../infrastructure/repositories/MongoAuctionRepository';
 import { Bid } from '../domain/entities/Bid';
 
-import { InMemoryAuctionRepository } from '../infrastructure/repositories/InMemoryAuctionRepository';
+// Repositorio persistente de subastas
+const auctionRepository = new MongoAuctionRepository();
 
-const auctionRepository = new InMemoryAuctionRepository();
-
-export const getAuctions = (
+export const getAuctions = async (
     request: Request,
     response: Response
-): void => {
+): Promise<void> => {
+
     console.log('Consultando subastas', request.query);
 
-    const getAuctions = new GetAuctions(auctionRepository);
-    const result = getAuctions.execute();
+    const useCase = new GetAuctions(auctionRepository);
+    const result = await useCase.execute();
 
     response.json({
         ok: true,
@@ -31,14 +34,15 @@ export const getAuctions = (
     });
 };
 
-export const getAuction = (
+export const getAuction = async (
     request: Request,
     response: Response
-): void => {
+): Promise<void> => {
+
     const { id } = request.params;
 
-    const getAuction = new GetAuction(auctionRepository);
-    const result = getAuction.execute(Number(id));
+    const useCase = new GetAuction(auctionRepository);
+    const result = await useCase.execute(Number(id));
 
     if (result === undefined) {
         response.status(404).json({
@@ -55,10 +59,11 @@ export const getAuction = (
     });
 };
 
-export const createAuction = (
+export const createAuction = async (
     request: Request,
     response: Response
-): void => {
+): Promise<void> => {
+
     const user = (request as AuthenticatedRequest).user;
 
     if (!user) {
@@ -80,10 +85,9 @@ export const createAuction = (
     } = request.body;
 
     try {
-        const createAuction = new CreateAuction(auctionRepository);
+        const useCase = new CreateAuction(auctionRepository);
 
-        // El vendedor se obtiene del token, no del cuerpo.
-        const auction = createAuction.execute(
+        const auction = await useCase.execute(
             articleId,
             user.userId,
             categoryId,
@@ -100,6 +104,7 @@ export const createAuction = (
             ok: true,
             data: auction
         });
+
     } catch (error) {
         if (error instanceof Error) {
             throw new HttpError(
@@ -112,10 +117,12 @@ export const createAuction = (
         throw error;
     }
 };
-export const placeBid = (
+
+export const placeBid = async (
     request: Request,
     response: Response
-): void => {
+): Promise<void> => {
+
     const { id } = request.params;
     const user = (request as AuthenticatedRequest).user;
 
@@ -129,7 +136,7 @@ export const placeBid = (
 
     const { amount } = request.body;
 
-    const auction = auctionRepository.getById(Number(id));
+    const auction = await auctionRepository.getById(Number(id));
 
     if (auction === undefined) {
         response.status(404).json({
@@ -141,16 +148,18 @@ export const placeBid = (
     }
 
     try {
+        const bidId = await auctionRepository.generateBidId();
+
         const bid = new Bid(
-            auctionRepository.generateBidId(),
+            bidId,
             user.userId,
             auction.id,
             amount,
             new Date()
         );
 
-        const placeBid = new PlaceBid(auctionRepository);
-        const result = placeBid.execute(auction, bid);
+        const useCase = new PlaceBid(auctionRepository);
+        const result = await useCase.execute(auction, bid);
 
         console.log('Puja aceptada:', bid.id);
 
@@ -158,6 +167,7 @@ export const placeBid = (
             ok: true,
             data: result
         });
+
     } catch (error) {
         if (error instanceof Error) {
             throw new HttpError(
@@ -171,10 +181,11 @@ export const placeBid = (
     }
 };
 
-export const cancelAuction = (
+export const cancelAuction = async (
     request: Request,
     response: Response
-): void => {
+): Promise<void> => {
+
     const { id } = request.params;
     const user = (request as AuthenticatedRequest).user;
 
@@ -186,7 +197,7 @@ export const cancelAuction = (
         );
     }
 
-    const auction = auctionRepository.getById(Number(id));
+    const auction = await auctionRepository.getById(Number(id));
 
     if (auction === undefined) {
         response.status(404).json({
@@ -207,12 +218,15 @@ export const cancelAuction = (
     }
 
     try {
-        const cancelAuction = new CancelAuction();
+        const useCase = new CancelAuction();
 
-        const result = cancelAuction.execute(
+        const result = useCase.execute(
             auction,
             user.userId
         );
+
+        // Persistir el nuevo estado
+        await auctionRepository.save(auction);
 
         console.log('Subasta cancelada:', auction.id);
 
@@ -220,6 +234,7 @@ export const cancelAuction = (
             ok: true,
             data: result
         });
+
     } catch (error) {
         if (error instanceof Error) {
             throw new HttpError(
@@ -233,10 +248,11 @@ export const cancelAuction = (
     }
 };
 
-export const closeAuction = (
+export const closeAuction = async (
     request: Request,
     response: Response
-): void => {
+): Promise<void> => {
+
     const { id } = request.params;
     const user = (request as AuthenticatedRequest).user;
 
@@ -248,7 +264,7 @@ export const closeAuction = (
         );
     }
 
-    const auction = auctionRepository.getById(Number(id));
+    const auction = await auctionRepository.getById(Number(id));
 
     if (auction === undefined) {
         response.status(404).json({
@@ -269,14 +285,17 @@ export const closeAuction = (
     }
 
     try {
-        const closeAuction = new CloseAuction(paymentRepository);
+        const useCase = new CloseAuction(paymentRepository);
 
-        const paymentOrder = closeAuction.execute(
+        const paymentOrder = useCase.execute(
             auction,
             paymentRepository.getOrderById(auction.id) === undefined
                 ? auction.id
                 : auction.id + 1
         );
+
+        // Persistir el estado cerrado o desierto
+        await auctionRepository.save(auction);
 
         console.log('Subasta cerrada:', auction.id);
 
@@ -284,6 +303,7 @@ export const closeAuction = (
             ok: true,
             data: paymentOrder
         });
+
     } catch (error) {
         if (error instanceof Error) {
             throw new HttpError(

@@ -1,23 +1,29 @@
+
 import { Bid } from '../../domain/entities/Bid';
 import { Auction } from '../../domain/entities/Auction';
 import { AuctionRepository } from '../ports/AuctionRepository';
 
 export class PlaceBid {
-
     private repository: AuctionRepository;
 
     constructor(repository: AuctionRepository) {
         this.repository = repository;
     }
 
-    execute(
+    async execute(
         auction: Auction,
         bid: Bid
-    ): Bid {
+    ): Promise<Bid> {
 
-        auction.placeBid(bid);
+        try {
+            auction.placeBid(bid);
+        } catch (error) {
+            // Conserva el intento rechazado en MongoDB.
+            await this.repository.save(auction);
+            throw error;
+        }
 
-        this.repository.save(auction);
+        await this.repository.save(auction);
 
         return bid;
     }
