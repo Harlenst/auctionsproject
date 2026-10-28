@@ -10,13 +10,15 @@ import { GetAuction } from '../application/use-cases/GetAuction';
 import { PlaceBid } from '../application/use-cases/PlaceBid';
 import { CancelAuction } from '../application/use-cases/CancelAuction';
 import { CloseAuction } from '../application/use-cases/CloseAuction';
-
 import { paymentRepository } from '../infrastructure/repositories/repositories';
 import { MongoAuctionRepository } from '../infrastructure/repositories/MongoAuctionRepository';
 import { Bid } from '../domain/entities/Bid';
+import { GetAuctionsWithArticles } from '../application/use-cases/GetAuctionsWithArticles';
+import { MongoArticleRepository } from '../infrastructure/repositories/MongoArticleRepository';
 
 // Repositorio persistente de subastas
 const auctionRepository = new MongoAuctionRepository();
+const articleRepository = new MongoArticleRepository();
 
 export const getAuctions = async (
     request: Request,
@@ -25,14 +27,19 @@ export const getAuctions = async (
 
     console.log('Consultando subastas', request.query);
 
-    const useCase = new GetAuctions(auctionRepository);
+    const useCase = new GetAuctionsWithArticles(
+        auctionRepository,
+        articleRepository
+    );
+
     const result = await useCase.execute();
 
-    response.json({
+    response.status(200).json({
         ok: true,
         data: result
     });
 };
+
 
 export const getAuction = async (
     request: Request,
@@ -85,7 +92,7 @@ export const createAuction = async (
     } = request.body;
 
     try {
-        const useCase = new CreateAuction(auctionRepository);
+        const useCase = new CreateAuction(auctionRepository, articleRepository);
 
         const auction = await useCase.execute(
             articleId,

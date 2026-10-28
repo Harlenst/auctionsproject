@@ -6,15 +6,21 @@ import { createServer } from 'http';
 import paymentRouter from './routes/payments';
 import userRouter from './routes/users';
 import auctionRouter from './routes/auctions';
-
+import articleRouter from './routes/articles';
 import { errorMiddleware } from './middleware/errorMiddleware';
 import { connectMongoDB } from './infrastructure/database/mongo';
 import { initializeSocketServer } from './infrastructure/websocket/SocketServer';
-
+import cors from 'cors';
 const PORT: number = Number(process.env.PORT) || 5000;
 
 const app: Application = express();
+app.use(cors({
+    origin: process.env.CLIENT_URL || 'http://localhost:5174',
+    methods: ['GET', 'POST', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
+app.use(express.json());
 // Crear servidor HTTP compartido
 const httpServer = createServer(app);
 
@@ -25,7 +31,7 @@ app.use(express.json());
 app.use('/api/v1', userRouter);
 app.use('/api/v1', auctionRouter);
 app.use('/api/v1', paymentRouter);
-
+app.use('/api/v1', articleRouter);
 // Middleware de errores al final
 app.use(errorMiddleware);
 
