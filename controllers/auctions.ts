@@ -48,8 +48,10 @@ export const getAuction = async (
 
     const { id } = request.params;
 
-    const useCase = new GetAuction(auctionRepository);
-    const result = await useCase.execute(Number(id));
+    const useCase = new GetAuction(
+        auctionRepository,
+        paymentRepository
+    ); const result = await useCase.execute(Number(id));
 
     if (result === undefined) {
         response.status(404).json({
@@ -165,8 +167,10 @@ export const placeBid = async (
             new Date()
         );
 
-        const useCase = new PlaceBid(auctionRepository);
-        const result = await useCase.execute(auction, bid);
+        const useCase = new PlaceBid(
+            auctionRepository,
+            paymentRepository
+        ); const result = await useCase.execute(auction, bid);
 
         // Notificar a todos los participantes de esta subasta
         getIO()
@@ -304,11 +308,11 @@ export const closeAuction = async (
     try {
         const useCase = new CloseAuction(paymentRepository);
 
+        const paymentOrderId = paymentRepository.generateOrderId();
+
         const paymentOrder = useCase.execute(
             auction,
-            paymentRepository.getOrderById(auction.id) === undefined
-                ? auction.id
-                : auction.id + 1
+            paymentOrderId
         );
 
         // Persistir el estado cerrado o desierto

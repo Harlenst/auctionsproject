@@ -1,4 +1,6 @@
 
+import { useState } from 'react';
+
 import Navbar from '../components/Navbar';
 import Hero from '../components/Hero';
 import TrustBar from '../components/TrustBar';
@@ -9,6 +11,9 @@ import SellSection from '../components/SellSection';
 import Testimonials from '../components/Testimonials';
 import FAQ from '../components/FAQ';
 import Footer from '../components/Footer';
+import BidModal from '../components/BidModal';
+
+import type { Auction } from '../components/AuctionCard';
 
 interface HomeProps {
   onLogin: () => void;
@@ -16,9 +21,12 @@ interface HomeProps {
 }
 
 function Home({ onLogin, onRegister }: HomeProps) {
-  const handleBid = () => {
-    alert('Próximamente podrás realizar tu puja desde aquí.');
-  };
+  const [selectedAuction, setSelectedAuction] =
+    useState<Auction | null>(null);
+
+  function handleBid(auction: Auction) {
+    setSelectedAuction(auction);
+  }
 
   return (
     <>
@@ -30,7 +38,9 @@ function Home({ onLogin, onRegister }: HomeProps) {
       <main>
         <Hero />
         <TrustBar />
+
         <AuctionGrid onBid={handleBid} />
+
         <Categories />
         <HowItWorks />
         <SellSection />
@@ -39,6 +49,13 @@ function Home({ onLogin, onRegister }: HomeProps) {
       </main>
 
       <Footer />
+
+      {selectedAuction && (
+        <BidModal
+          auction={selectedAuction}
+          onClose={() => setSelectedAuction(null)}
+        />
+      )}
     </>
   );
 }
