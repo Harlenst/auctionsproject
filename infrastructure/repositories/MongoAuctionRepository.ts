@@ -15,7 +15,8 @@ export class MongoAuctionRepository implements AuctionRepository {
             .lean()
             .exec();
 
-return documents.map((document: any) => this.toDomain(document));    }
+        return documents.map((document: any) => this.toDomain(document));
+    }
 
     async getById(id: number): Promise<Auction | undefined> {
         const document = await AuctionModel.findOne({ id })
@@ -35,8 +36,7 @@ return documents.map((document: any) => this.toDomain(document));    }
             { $inc: { sequence: 1 } },
             {
                 upsert: true,
-                new: true,
-                setDefaultsOnInsert: true
+                returnDocument: 'after', setDefaultsOnInsert: true
             }
         );
 
@@ -53,8 +53,7 @@ return documents.map((document: any) => this.toDomain(document));    }
             { $inc: { sequence: 1 } },
             {
                 upsert: true,
-                new: true,
-                setDefaultsOnInsert: true
+                returnDocument: 'after', setDefaultsOnInsert: true
             }
         );
 
@@ -100,8 +99,7 @@ return documents.map((document: any) => this.toDomain(document));    }
             },
             {
                 upsert: true,
-                new: true,
-                runValidators: true
+                returnDocument: 'after', runValidators: true
             }
         );
     }

@@ -46,8 +46,7 @@ export class MongoArticleRepository implements ArticleRepository {
             { $inc: { sequence: 1 } },
             {
                 upsert: true,
-                new: true,
-                setDefaultsOnInsert: true
+                returnDocument: 'after', setDefaultsOnInsert: true
             }
         ).exec();
 
@@ -58,22 +57,22 @@ export class MongoArticleRepository implements ArticleRepository {
         return counter.sequence;
     }
     async update(article: Article): Promise<void> {
-    const result = await ArticleModel.updateOne(
-        { id: article.id },
-        {
-            $set: {
-                name: article.name,
-                description: article.description,
-                condition: article.condition,
-                imageUrl: article.imageUrl
+        const result = await ArticleModel.updateOne(
+            { id: article.id },
+            {
+                $set: {
+                    name: article.name,
+                    description: article.description,
+                    condition: article.condition,
+                    imageUrl: article.imageUrl
+                }
             }
-        }
-    ).exec();
+        ).exec();
 
-    if (result.matchedCount === 0) {
-        throw new Error('El artículo no fue encontrado');
+        if (result.matchedCount === 0) {
+            throw new Error('El artículo no fue encontrado');
+        }
     }
-}
 
     async save(article: Article): Promise<void> {
         await ArticleModel.create({

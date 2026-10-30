@@ -1,3 +1,4 @@
-import { InMemoryPaymentRepository } from './InMemoryPaymentRepository';
 
-export const paymentRepository = new InMemoryPaymentRepository();
+import { MongoPaymentRepository } from './MongoPaymentRepository';
+
+export const paymentRepository = new MongoPaymentRepository();
