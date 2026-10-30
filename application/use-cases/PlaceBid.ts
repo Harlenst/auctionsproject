@@ -6,7 +6,6 @@ import { PaymentRepository } from '../ports/PaymentRepository';
 import { CloseAuction } from './CloseAuction';
 
 export class PlaceBid {
-
     constructor(
         private repository: AuctionRepository,
         private paymentRepository: PaymentRepository
@@ -17,32 +16,31 @@ export class PlaceBid {
         bid: Bid
     ): Promise<Bid> {
 
-        // Comprobar si la subasta venció.
         const now = new Date();
 
+        // Comprobar si la subasta venció.
         if (
             auction.status.getValue() === 'open' &&
             now >= auction.closingAt
         ) {
-            // Obtener una orden existente o generar un nuevo ID.
             const existingOrder =
-                this.paymentRepository.getOrderByAuctionId(auction.id);
+                await this.paymentRepository.getOrderByAuctionId(
+                    auction.id
+                );
 
             const paymentOrderId = existingOrder
                 ? existingOrder.id
-                : this.paymentRepository.generateOrderId();
+                : await this.paymentRepository.generateOrderId();
 
-            // Cerrar la subasta y generar la orden si hay ganador.
             const closeAuction = new CloseAuction(
                 this.paymentRepository
             );
 
-            closeAuction.execute(auction, paymentOrderId);
+            await closeAuction.execute(auction, paymentOrderId);
 
-            // Persistir el cierre en MongoDB.
+            // Persistir el cierre de la subasta.
             await this.repository.save(auction);
 
-            // Rechazar la oferta porque la subasta ya venció.
             throw new Error(
                 'La subasta ha finalizado y no acepta nuevas ofertas'
             );
@@ -51,12 +49,10 @@ export class PlaceBid {
         try {
             auction.placeBid(bid);
         } catch (error) {
-            // Conservar los intentos rechazados en MongoDB.
             await this.repository.save(auction);
             throw error;
         }
 
-        // Persistir la oferta aceptada.
         await this.repository.save(auction);
 
         return bid;

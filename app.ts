@@ -25,7 +25,6 @@ app.use(express.json());
 const httpServer = createServer(app);
 
 // Configurar middleware
-app.use(express.json());
 
 // Registrar rutas
 app.use('/api/v1', userRouter);

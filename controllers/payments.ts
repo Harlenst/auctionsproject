@@ -6,10 +6,10 @@ import { GetPaymentOrders } from '../application/use-cases/GetPaymentOrders';
 import { paymentRepository } from '../infrastructure/repositories/repositories';
 import { ExpirePaymentOrder } from '../application/use-cases/ExpirePaymentOrder';
 
-export const getMyPaymentOrders = (
+export const getMyPaymentOrders = async (
     request: AuthenticatedRequest,
     response: Response
-): void => {
+): Promise<void> => {
     if (!request.user) {
         throw new HttpError(
             401,
@@ -19,7 +19,10 @@ export const getMyPaymentOrders = (
     }
 
     const getPaymentOrders = new GetPaymentOrders(paymentRepository);
-    const orders = getPaymentOrders.execute(request.user.userId);
+
+    const orders = await getPaymentOrders.execute(
+        request.user.userId
+    );
 
     response.status(200).json({
         ok: true,
@@ -27,11 +30,10 @@ export const getMyPaymentOrders = (
     });
 };
 
-
-export const expireMyPaymentOrder = (
+export const expireMyPaymentOrder = async (
     request: AuthenticatedRequest,
     response: Response
-): void => {
+): Promise<void> => {
     const user = request.user;
 
     if (!user) {
@@ -52,7 +54,7 @@ export const expireMyPaymentOrder = (
         );
     }
 
-    const order = paymentRepository.getOrderById(orderId);
+    const order = await paymentRepository.getOrderById(orderId);
 
     if (!order) {
         throw new HttpError(
@@ -78,6 +80,14 @@ export const expireMyPaymentOrder = (
         );
     }
 
+    if (order.status === 'expired') {
+        throw new HttpError(
+            400,
+            'PAYMENT_ALREADY_EXPIRED',
+            'La orden de pago ya está vencida'
+        );
+    }
+
     if (new Date() < order.expirationDate) {
         throw new HttpError(
             400,
@@ -90,11 +100,13 @@ export const expireMyPaymentOrder = (
         paymentRepository
     );
 
-    expirePaymentOrder.execute(orderId);
+    await expirePaymentOrder.execute(orderId);
+
+    const updatedOrder =
+        await paymentRepository.getOrderById(orderId);
 
     response.status(200).json({
         ok: true,
-        data: order
+        data: updatedOrder
     });
 };
-

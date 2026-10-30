@@ -24,17 +24,19 @@ export class GetAuction {
             now >= auction.closingAt
         ) {
             const existingOrder =
-                this.paymentRepository.getOrderByAuctionId(auction.id);
+                await this.paymentRepository.getOrderByAuctionId(
+                    auction.id
+                );
 
             const paymentOrderId = existingOrder
                 ? existingOrder.id
-                : this.paymentRepository.generateOrderId();
+                : await this.paymentRepository.generateOrderId();
 
             const closeAuction = new CloseAuction(
                 this.paymentRepository
             );
 
-            closeAuction.execute(auction, paymentOrderId);
+            await closeAuction.execute(auction, paymentOrderId);
 
             await this.repository.save(auction);
         }

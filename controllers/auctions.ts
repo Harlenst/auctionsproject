@@ -308,8 +308,7 @@ export const closeAuction = async (
     try {
         const useCase = new CloseAuction(paymentRepository);
 
-        const paymentOrderId = paymentRepository.generateOrderId();
-
+        const paymentOrderId = await paymentRepository.generateOrderId();
         const paymentOrder = useCase.execute(
             auction,
             paymentOrderId
