@@ -23,7 +23,7 @@ const paymentOrderSchema = new Schema(
         amount: {
             type: Number,
             required: true,
-            min: 0
+            min: 0.01
         },
 
         createdAt: {

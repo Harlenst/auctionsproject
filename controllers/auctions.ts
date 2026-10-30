@@ -1,9 +1,8 @@
 
 import { Request, Response } from 'express';
-import { getIO } from '../infrastructure/websocket/SocketServer';
 import { AuthenticatedRequest } from '../middleware/authMiddleware';
 import { HttpError } from '../application/errors/HttpError';
-
+import { SocketAuctionEventPublisher } from '../infrastructure/websocket/SocketAuctionEventPublisher';
 import { CreateAuction } from '../application/use-cases/CreateAuction';
 import { GetAuctions } from '../application/use-cases/GetAuctions';
 import { GetAuction } from '../application/use-cases/GetAuction';
@@ -19,6 +18,7 @@ import { MongoArticleRepository } from '../infrastructure/repositories/MongoArti
 // Repositorio persistente de subastas
 const auctionRepository = new MongoAuctionRepository();
 const articleRepository = new MongoArticleRepository();
+const auctionEventPublisher = new SocketAuctionEventPublisher();
 
 export const getAuctions = async (
     request: Request,
@@ -50,7 +50,8 @@ export const getAuction = async (
 
     const useCase = new GetAuction(
         auctionRepository,
-        paymentRepository
+        paymentRepository,
+        auctionEventPublisher
     ); const result = await useCase.execute(Number(id));
 
     if (result === undefined) {
@@ -167,20 +168,27 @@ export const placeBid = async (
             new Date()
         );
 
+        const previousHighestBid = auction.getHighestBid();
+
         const useCase = new PlaceBid(
             auctionRepository,
-            paymentRepository
+            paymentRepository,
+            auctionEventPublisher
         ); const result = await useCase.execute(auction, bid);
 
         // Notificar a todos los participantes de esta subasta
-        getIO()
-            .to(`auction:${auction.id}`)
-            .emit('bid:created', {
-                auctionId: auction.id,
-                bid: result,
-                message: 'Se ha registrado una nueva oferta'
-            });
+        auctionEventPublisher.bidCreated(auction.id, result);
 
+        if (
+            previousHighestBid &&
+            previousHighestBid.userId !== result.userId
+        ) {
+            auctionEventPublisher.bidOutbid(
+                auction.id,
+                previousHighestBid.userId,
+                result.amount.getValue()
+            );
+        }
         console.log('Puja aceptada:', bid.id);
         console.log('Notificación Socket.IO enviada:', auction.id);
 
@@ -249,6 +257,8 @@ export const cancelAuction = async (
         // Persistir el nuevo estado
         await auctionRepository.save(auction);
 
+        auctionEventPublisher.auctionClosed(auction);
+
         console.log('Subasta cancelada:', auction.id);
 
         response.status(200).json({
@@ -309,13 +319,15 @@ export const closeAuction = async (
         const useCase = new CloseAuction(paymentRepository);
 
         const paymentOrderId = await paymentRepository.generateOrderId();
-        const paymentOrder = useCase.execute(
+        const paymentOrder = await useCase.execute(
             auction,
             paymentOrderId
         );
 
         // Persistir el estado cerrado o desierto
         await auctionRepository.save(auction);
+
+        auctionEventPublisher.auctionClosed(auction);
 
         console.log('Subasta cerrada:', auction.id);
 

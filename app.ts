@@ -20,7 +20,15 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-app.use(express.json());
+
+app.use(express.json({
+    verify: (request, _response, buffer) => {
+        (
+            request as express.Request & { rawBody?: Buffer }
+        ).rawBody = Buffer.from(buffer);
+    }
+}));
+
 // Crear servidor HTTP compartido
 const httpServer = createServer(app);
 

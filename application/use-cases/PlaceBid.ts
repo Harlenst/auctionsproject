@@ -3,12 +3,14 @@ import { Bid } from '../../domain/entities/Bid';
 import { Auction } from '../../domain/entities/Auction';
 import { AuctionRepository } from '../ports/AuctionRepository';
 import { PaymentRepository } from '../ports/PaymentRepository';
+import { AuctionEventPublisher } from '../ports/AuctionEventPublisher';
 import { CloseAuction } from './CloseAuction';
 
 export class PlaceBid {
     constructor(
         private repository: AuctionRepository,
-        private paymentRepository: PaymentRepository
+        private paymentRepository: PaymentRepository,
+        private eventPublisher?: AuctionEventPublisher
     ) {}
 
     async execute(
@@ -40,6 +42,9 @@ export class PlaceBid {
 
             // Persistir el cierre de la subasta.
             await this.repository.save(auction);
+
+            // Notificar el cierre automático.
+            this.eventPublisher?.auctionClosed(auction);
 
             throw new Error(
                 'La subasta ha finalizado y no acepta nuevas ofertas'

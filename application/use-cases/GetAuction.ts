@@ -2,12 +2,14 @@
 import { Auction } from '../../domain/entities/Auction';
 import { AuctionRepository } from '../ports/AuctionRepository';
 import { PaymentRepository } from '../ports/PaymentRepository';
+import { AuctionEventPublisher } from '../ports/AuctionEventPublisher';
 import { CloseAuction } from './CloseAuction';
 
 export class GetAuction {
     constructor(
         private repository: AuctionRepository,
-        private paymentRepository: PaymentRepository
+        private paymentRepository: PaymentRepository,
+        private eventPublisher?: AuctionEventPublisher
     ) {}
 
     async execute(id: number): Promise<Auction | undefined> {
@@ -39,6 +41,9 @@ export class GetAuction {
             await closeAuction.execute(auction, paymentOrderId);
 
             await this.repository.save(auction);
+
+            // Notificar el cierre automático.
+            this.eventPublisher?.auctionClosed(auction);
         }
 
         return auction;

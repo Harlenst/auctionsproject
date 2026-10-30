@@ -14,6 +14,7 @@ const paymentEventSchema = new Schema(
         },
         status: {
             type: String,
+            enum: ['confirmed'],
             required: true
         },
         createdAt: {

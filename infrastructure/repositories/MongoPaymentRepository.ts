@@ -139,67 +139,72 @@ export class MongoPaymentRepository implements PaymentRepository {
             document.status
         );
     }
-    
-async confirmOrderAndSaveEvent(
-    order: PaymentOrder,
-    event: PaymentEvent
-): Promise<void> {
 
-    const session = await mongoose.startSession();
+    async confirmOrderAndSaveEvent(
+        order: PaymentOrder,
+        event: PaymentEvent
+    ): Promise<void> {
+        if (event.status !== 'confirmed') {
+            throw new Error('Estado de evento de pago inválido');
+        }
 
-    try {
-        await session.withTransaction(async () => {
+        const eventStatus = event.status;
 
-            // 1. Comprobar si el evento ya fue procesado.
-            const existingEvent = await PaymentEventModel
-                .findOne({ id: event.id })
-                .session(session)
-                .lean()
-                .exec();
+        const session = await mongoose.startSession();
 
-            if (existingEvent) {
-                return;
-            }
+        try {
+            await session.withTransaction(async () => {
 
-            // 2. Actualizar la orden dentro de la transacción.
-            const updatedOrder = await PaymentOrderModel.findOneAndUpdate(
-                { id: order.id },
-                {
-                    $set: {
-                        auctionId: order.auctionId,
-                        winnerId: order.winnerId,
-                        amount: order.amount.getValue(),
-                        createdAt: order.createdAt,
-                        expirationDate: order.expirationDate,
-                        status: order.status
-                    }
-                },
-                {
-                    session,
-                    returnDocument: 'after',
-                    runValidators: true
+                // 1. Comprobar si el evento ya fue procesado.
+                const existingEvent = await PaymentEventModel
+                    .findOne({ id: event.id })
+                    .session(session)
+                    .lean()
+                    .exec();
+
+                if (existingEvent) {
+                    return;
                 }
-            );
 
-            if (!updatedOrder) {
-                throw new Error('La orden de pago no existe');
-            }
+                // 2. Actualizar la orden dentro de la transacción.
+                const updatedOrder = await PaymentOrderModel.findOneAndUpdate(
+                    { id: order.id },
+                    {
+                        $set: {
+                            auctionId: order.auctionId,
+                            winnerId: order.winnerId,
+                            amount: order.amount.getValue(),
+                            createdAt: order.createdAt,
+                            expirationDate: order.expirationDate,
+                            status: order.status
+                        }
+                    },
+                    {
+                        session,
+                        returnDocument: 'after',
+                        runValidators: true
+                    }
+                );
 
-            // 3. Guardar el evento dentro de la misma transacción.
-            await PaymentEventModel.create(
-                [{
-                    id: event.id,
-                    orderPaymentId: event.orderPaymentId,
-                    status: event.status,
-                    createdAt: event.createdAt
-                }],
-                { session }
-            );
-        });
+                if (!updatedOrder) {
+                    throw new Error('La orden de pago no existe');
+                }
 
-    } finally {
-        await session.endSession();
+                // 3. Guardar el evento dentro de la misma transacción.
+                await PaymentEventModel.create(
+                    [{
+                        id: event.id,
+                        orderPaymentId: event.orderPaymentId,
+                        status: eventStatus,
+                        createdAt: event.createdAt
+                    }],
+                    { session }
+                );
+            });
+
+        } finally {
+            await session.endSession();
+        }
     }
-}
 
 }
