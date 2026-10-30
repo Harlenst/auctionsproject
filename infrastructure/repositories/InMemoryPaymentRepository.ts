@@ -1,4 +1,3 @@
-
 import { PaymentEvent } from '../../domain/entities/PaymentEvent';
 import { PaymentOrder } from '../../domain/entities/PaymentOrder';
 import { PaymentRepository } from '../../application/ports/PaymentRepository';
@@ -10,42 +9,95 @@ export class InMemoryPaymentRepository implements PaymentRepository {
 
     private nextOrderId = 1;
 
-    generateOrderId(): number {
+    async generateOrderId(): Promise<number> {
         return this.nextOrderId++;
     }
 
-    getOrderById(id: number): PaymentOrder | undefined {
+    async getOrderById(id: number): Promise<PaymentOrder | undefined> {
         return this.orders.find(order => order.id === id);
     }
 
-    getOrderByAuctionId(auctionId: number): PaymentOrder | undefined {
+    async getOrderByAuctionId(
+        auctionId: number
+    ): Promise<PaymentOrder | undefined> {
         return this.orders.find(order => order.auctionId === auctionId);
     }
 
-    getOrdersByWinnerId(winnerId: number): PaymentOrder[] {
+    async getOrdersByWinnerId(
+        winnerId: number
+    ): Promise<PaymentOrder[]> {
         return this.orders.filter(order => order.winnerId === winnerId);
     }
 
-    saveOrder(order: PaymentOrder): void {
-        const existingOrder = this.getOrderById(order.id);
-        const existingAuctionOrder = this.getOrderByAuctionId(order.auctionId);
+    async saveOrder(order: PaymentOrder): Promise<void> {
+        const existingOrderIndex = this.orders.findIndex(
+            existing => existing.id === order.id
+        );
 
-        if (existingOrder || existingAuctionOrder) {
-            throw new Error('La orden de pago ya existe');
+        const existingAuctionOrder = this.orders.find(
+            existing =>
+                existing.auctionId === order.auctionId &&
+                existing.id !== order.id
+        );
+
+        if (existingAuctionOrder) {
+            throw new Error('Ya existe una orden para esta subasta');
+        }
+
+        if (existingOrderIndex !== -1) {
+            this.orders[existingOrderIndex] = order;
+            return;
         }
 
         this.orders.push(order);
     }
 
-    getEventById(id: number): PaymentEvent | undefined {
+    async getEventById(id: number): Promise<PaymentEvent | undefined> {
         return this.events.find(event => event.id === id);
     }
 
-    saveEvent(event: PaymentEvent): void {
-        const existingEvent = this.getEventById(event.id);
+    async saveEvent(event: PaymentEvent): Promise<void> {
+        const existingEvent = this.events.find(
+            existing => existing.id === event.id
+        );
 
         if (existingEvent === undefined) {
             this.events.push(event);
         }
+    }
+
+    async confirmOrderAndSaveEvent(
+        order: PaymentOrder,
+        event: PaymentEvent
+    ): Promise<void> {
+
+        const existingEvent = this.events.find(
+            existing => existing.id === event.id
+        );
+
+        if (existingEvent) {
+            return;
+        }
+
+        const orderIndex = this.orders.findIndex(
+            existing => existing.id === order.id
+        );
+
+        if (orderIndex === -1) {
+            throw new Error('La orden de pago no existe');
+        }
+
+        const existingAuctionOrder = this.orders.find(
+            existing =>
+                existing.auctionId === order.auctionId &&
+                existing.id !== order.id
+        );
+
+        if (existingAuctionOrder) {
+            throw new Error('Ya existe una orden para esta subasta');
+        }
+
+        this.orders[orderIndex] = order;
+        this.events.push(event);
     }
 }

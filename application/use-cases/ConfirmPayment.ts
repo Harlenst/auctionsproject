@@ -1,3 +1,4 @@
+
 import { PaymentEvent } from '../../domain/entities/PaymentEvent';
 import { PaymentRepository } from '../ports/PaymentRepository';
 
@@ -9,19 +10,19 @@ export class ConfirmPayment {
         this.repository = repository;
     }
 
-    execute(
+    async execute(
         event: PaymentEvent
-    ): void {
+    ): Promise<void> {
 
         const existingEvent =
-            this.repository.getEventById(event.id);
+            await this.repository.getEventById(event.id);
 
         if (existingEvent !== undefined) {
             return;
         }
 
         const order =
-            this.repository.getOrderById(
+            await this.repository.getOrderById(
                 event.orderPaymentId
             );
 
@@ -39,7 +40,6 @@ export class ConfirmPayment {
 
         order.confirm();
 
-        this.repository.saveEvent(event);
-        this.repository.saveOrder(order);
-    }
+        await this.repository.confirmOrderAndSaveEvent(order, event);
+}
 }

@@ -1,14 +1,20 @@
+
 import { Money } from '../value-objects/Money';
 
-export class PaymentOrder {
+export type PaymentOrderStatus =
+    | 'pending'
+    | 'confirmed'
+    | 'expired';
 
-    id: number;
-    auctionId: number;
-    winnerId: number;
-    amount: Money;
-    createdAt: Date;
-    expirationDate: Date;
-    status: string;
+export class PaymentOrder {
+    readonly id: number;
+    readonly auctionId: number;
+    readonly winnerId: number;
+    readonly amount: Money;
+    readonly createdAt: Date;
+    readonly expirationDate: Date;
+
+    status: PaymentOrderStatus;
 
     constructor(
         id: number,
@@ -17,44 +23,76 @@ export class PaymentOrder {
         amount: number,
         createdAt: Date,
         expirationDate: Date,
-        status: string
+        status: PaymentOrderStatus
     ) {
+        if (!Number.isInteger(id) || id <= 0) {
+            throw new Error('El ID de la orden debe ser positivo');
+        }
+
+        if (!Number.isInteger(auctionId) || auctionId <= 0) {
+            throw new Error('El ID de la subasta no es válido');
+        }
+
+        if (!Number.isInteger(winnerId) || winnerId <= 0) {
+            throw new Error('El ID del ganador no es válido');
+        }
+
+        if (Number.isNaN(createdAt.getTime())) {
+            throw new Error('La fecha de creación no es válida');
+        }
+
+        if (Number.isNaN(expirationDate.getTime())) {
+            throw new Error('La fecha de expiración no es válida');
+        }
+
+        if (expirationDate <= createdAt) {
+            throw new Error(
+                'La expiración debe ser posterior a la creación'
+            );
+        }
+
+        if (!['pending', 'confirmed', 'expired'].includes(status)) {
+            throw new Error('El estado de la orden no es válido');
+        }
 
         this.id = id;
         this.auctionId = auctionId;
         this.winnerId = winnerId;
-
-        // RN-21 y RNF-07
         this.amount = new Money(amount);
-
-        this.createdAt = createdAt;
-        this.expirationDate = expirationDate;
+        this.createdAt = new Date(createdAt);
+        this.expirationDate = new Date(expirationDate);
         this.status = status;
     }
 
     confirm(): void {
-
         if (this.status === 'confirmed') {
             return;
         }
 
         if (this.status === 'expired') {
+            throw new Error('La orden de pago está vencida');
+        }
+
+        if (new Date() >= this.expirationDate) {
+            this.status = 'expired';
+
             throw new Error(
-                'La orden de pago está vencida'
+                'La orden de pago ha superado su fecha de expiración'
             );
         }
 
-        // RN-17
         this.status = 'confirmed';
     }
 
     expire(): void {
-
         if (this.status === 'confirmed') {
             return;
         }
 
-        // RN-20
+        if (this.status === 'expired') {
+            return;
+        }
+
         this.status = 'expired';
     }
 }

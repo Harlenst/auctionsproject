@@ -1,3 +1,4 @@
+
 import { PaymentRepository } from '../ports/PaymentRepository';
 
 export class ExpirePaymentOrder {
@@ -8,10 +9,10 @@ export class ExpirePaymentOrder {
         this.repository = repository;
     }
 
-    execute(orderId: number): void {
+    async execute(orderId: number): Promise<void> {
 
         const order =
-            this.repository.getOrderById(orderId);
+            await this.repository.getOrderById(orderId);
 
         if (order === undefined) {
             throw new Error(
@@ -29,6 +30,6 @@ export class ExpirePaymentOrder {
 
         order.expire();
 
-        this.repository.saveOrder(order);
+        await this.repository.saveOrder(order);
     }
 }
