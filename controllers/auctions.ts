@@ -91,11 +91,14 @@ export const createAuction = async (
         minimumIncrement,
         createdAt,
         closingAt,
-        status
+
     } = request.body;
 
     try {
-        const useCase = new CreateAuction(auctionRepository, articleRepository);
+        const useCase = new CreateAuction(
+            auctionRepository,
+            articleRepository
+        );
 
         const auction = await useCase.execute(
             articleId,
@@ -105,7 +108,7 @@ export const createAuction = async (
             minimumIncrement,
             new Date(createdAt),
             new Date(closingAt),
-            status
+            'open'
         );
 
         console.log('Subasta creada:', auction.id);
@@ -126,225 +129,224 @@ export const createAuction = async (
 
         throw error;
     }
-};
+}
+    export const placeBid = async (
+        request: Request,
+        response: Response
+    ): Promise<void> => {
 
-export const placeBid = async (
-    request: Request,
-    response: Response
-): Promise<void> => {
+        const { id } = request.params;
+        const user = (request as AuthenticatedRequest).user;
 
-    const { id } = request.params;
-    const user = (request as AuthenticatedRequest).user;
+        if (!user) {
+            throw new HttpError(
+                401,
+                'UNAUTHORIZED',
+                'Debes iniciar sesión'
+            );
+        }
 
-    if (!user) {
-        throw new HttpError(
-            401,
-            'UNAUTHORIZED',
-            'Debes iniciar sesión'
-        );
-    }
+        const { amount } = request.body;
 
-    const { amount } = request.body;
+        const auction = await auctionRepository.getById(Number(id));
 
-    const auction = await auctionRepository.getById(Number(id));
+        if (auction === undefined) {
+            response.status(404).json({
+                ok: false,
+                code: 'AUCTION_NOT_FOUND',
+                message: 'La subasta no fue encontrada'
+            });
+            return;
+        }
 
-    if (auction === undefined) {
-        response.status(404).json({
-            ok: false,
-            code: 'AUCTION_NOT_FOUND',
-            message: 'La subasta no fue encontrada'
-        });
-        return;
-    }
+        try {
+            const bidId = await auctionRepository.generateBidId();
 
-    try {
-        const bidId = await auctionRepository.generateBidId();
-
-        const bid = new Bid(
-            bidId,
-            user.userId,
-            auction.id,
-            amount,
-            new Date()
-        );
-
-        const previousHighestBid = auction.getHighestBid();
-
-        const useCase = new PlaceBid(
-            auctionRepository,
-            paymentRepository,
-            auctionEventPublisher
-        ); const result = await useCase.execute(auction, bid);
-
-        // Notificar a todos los participantes de esta subasta
-        auctionEventPublisher.bidCreated(auction.id, result);
-
-        if (
-            previousHighestBid &&
-            previousHighestBid.userId !== result.userId
-        ) {
-            auctionEventPublisher.bidOutbid(
+            const bid = new Bid(
+                bidId,
+                user.userId,
                 auction.id,
-                previousHighestBid.userId,
-                result.amount.getValue()
+                amount,
+                new Date()
             );
+
+            const previousHighestBid = auction.getHighestBid();
+
+            const useCase = new PlaceBid(
+                auctionRepository,
+                paymentRepository,
+                auctionEventPublisher
+            ); const result = await useCase.execute(auction, bid);
+
+            // Notificar a todos los participantes de esta subasta
+            auctionEventPublisher.bidCreated(auction.id, result);
+
+            if (
+                previousHighestBid &&
+                previousHighestBid.userId !== result.userId
+            ) {
+                auctionEventPublisher.bidOutbid(
+                    auction.id,
+                    previousHighestBid.userId,
+                    result.amount.getValue()
+                );
+            }
+            console.log('Puja aceptada:', bid.id);
+            console.log('Notificación Socket.IO enviada:', auction.id);
+
+            response.status(201).json({
+                ok: true,
+                data: result
+            });
+
+        } catch (error) {
+            if (error instanceof Error) {
+                throw new HttpError(
+                    400,
+                    'BID_REJECTED',
+                    error.message
+                );
+            }
+
+            throw error;
         }
-        console.log('Puja aceptada:', bid.id);
-        console.log('Notificación Socket.IO enviada:', auction.id);
+    };
 
-        response.status(201).json({
-            ok: true,
-            data: result
-        });
+    export const cancelAuction = async (
+        request: Request,
+        response: Response
+    ): Promise<void> => {
 
-    } catch (error) {
-        if (error instanceof Error) {
+        const { id } = request.params;
+        const user = (request as AuthenticatedRequest).user;
+
+        if (!user) {
             throw new HttpError(
-                400,
-                'BID_REJECTED',
-                error.message
+                401,
+                'UNAUTHORIZED',
+                'Debes iniciar sesión'
             );
         }
 
-        throw error;
-    }
-};
+        const auction = await auctionRepository.getById(Number(id));
 
-export const cancelAuction = async (
-    request: Request,
-    response: Response
-): Promise<void> => {
+        if (auction === undefined) {
+            response.status(404).json({
+                ok: false,
+                code: 'AUCTION_NOT_FOUND',
+                message: 'La subasta no fue encontrada'
+            });
+            return;
+        }
 
-    const { id } = request.params;
-    const user = (request as AuthenticatedRequest).user;
+        if (auction.sellerId !== user.userId) {
+            response.status(403).json({
+                ok: false,
+                code: 'FORBIDDEN',
+                message: 'Solo el vendedor puede cancelar su subasta'
+            });
+            return;
+        }
 
-    if (!user) {
-        throw new HttpError(
-            401,
-            'UNAUTHORIZED',
-            'Debes iniciar sesión'
-        );
-    }
+        try {
+            const useCase = new CancelAuction();
 
-    const auction = await auctionRepository.getById(Number(id));
+            const result = useCase.execute(
+                auction,
+                user.userId
+            );
 
-    if (auction === undefined) {
-        response.status(404).json({
-            ok: false,
-            code: 'AUCTION_NOT_FOUND',
-            message: 'La subasta no fue encontrada'
-        });
-        return;
-    }
+            // Persistir el nuevo estado
+            await auctionRepository.save(auction);
 
-    if (auction.sellerId !== user.userId) {
-        response.status(403).json({
-            ok: false,
-            code: 'FORBIDDEN',
-            message: 'Solo el vendedor puede cancelar su subasta'
-        });
-        return;
-    }
+            auctionEventPublisher.auctionClosed(auction);
 
-    try {
-        const useCase = new CancelAuction();
+            console.log('Subasta cancelada:', auction.id);
 
-        const result = useCase.execute(
-            auction,
-            user.userId
-        );
+            response.status(200).json({
+                ok: true,
+                data: result
+            });
 
-        // Persistir el nuevo estado
-        await auctionRepository.save(auction);
+        } catch (error) {
+            if (error instanceof Error) {
+                throw new HttpError(
+                    400,
+                    'AUCTION_CANCEL_ERROR',
+                    error.message
+                );
+            }
 
-        auctionEventPublisher.auctionClosed(auction);
+            throw error;
+        }
+    };
 
-        console.log('Subasta cancelada:', auction.id);
+    export const closeAuction = async (
+        request: Request,
+        response: Response
+    ): Promise<void> => {
 
-        response.status(200).json({
-            ok: true,
-            data: result
-        });
+        const { id } = request.params;
+        const user = (request as AuthenticatedRequest).user;
 
-    } catch (error) {
-        if (error instanceof Error) {
+        if (!user) {
             throw new HttpError(
-                400,
-                'AUCTION_CANCEL_ERROR',
-                error.message
+                401,
+                'UNAUTHORIZED',
+                'Debes iniciar sesión'
             );
         }
 
-        throw error;
-    }
-};
+        const auction = await auctionRepository.getById(Number(id));
 
-export const closeAuction = async (
-    request: Request,
-    response: Response
-): Promise<void> => {
-
-    const { id } = request.params;
-    const user = (request as AuthenticatedRequest).user;
-
-    if (!user) {
-        throw new HttpError(
-            401,
-            'UNAUTHORIZED',
-            'Debes iniciar sesión'
-        );
-    }
-
-    const auction = await auctionRepository.getById(Number(id));
-
-    if (auction === undefined) {
-        response.status(404).json({
-            ok: false,
-            code: 'AUCTION_NOT_FOUND',
-            message: 'La subasta no fue encontrada'
-        });
-        return;
-    }
-
-    if (auction.sellerId !== user.userId) {
-        response.status(403).json({
-            ok: false,
-            code: 'FORBIDDEN',
-            message: 'Solo el vendedor puede cerrar su subasta'
-        });
-        return;
-    }
-
-    try {
-        const useCase = new CloseAuction(paymentRepository);
-
-        const paymentOrderId = await paymentRepository.generateOrderId();
-        const paymentOrder = await useCase.execute(
-            auction,
-            paymentOrderId
-        );
-
-        // Persistir el estado cerrado o desierto
-        await auctionRepository.save(auction);
-
-        auctionEventPublisher.auctionClosed(auction);
-
-        console.log('Subasta cerrada:', auction.id);
-
-        response.status(200).json({
-            ok: true,
-            data: paymentOrder
-        });
-
-    } catch (error) {
-        if (error instanceof Error) {
-            throw new HttpError(
-                400,
-                'AUCTION_CLOSE_ERROR',
-                error.message
-            );
+        if (auction === undefined) {
+            response.status(404).json({
+                ok: false,
+                code: 'AUCTION_NOT_FOUND',
+                message: 'La subasta no fue encontrada'
+            });
+            return;
         }
 
-        throw error;
-    }
-};
+        if (auction.sellerId !== user.userId) {
+            response.status(403).json({
+                ok: false,
+                code: 'FORBIDDEN',
+                message: 'Solo el vendedor puede cerrar su subasta'
+            });
+            return;
+        }
+
+        try {
+            const useCase = new CloseAuction(paymentRepository);
+
+            const paymentOrderId = await paymentRepository.generateOrderId();
+            const paymentOrder = await useCase.execute(
+                auction,
+                paymentOrderId
+            );
+
+            // Persistir el estado cerrado o desierto
+            await auctionRepository.save(auction);
+
+            auctionEventPublisher.auctionClosed(auction);
+
+            console.log('Subasta cerrada:', auction.id);
+
+            response.status(200).json({
+                ok: true,
+                data: paymentOrder
+            });
+
+        } catch (error) {
+            if (error instanceof Error) {
+                throw new HttpError(
+                    400,
+                    'AUCTION_CLOSE_ERROR',
+                    error.message
+                );
+            }
+
+            throw error;
+        }
+    };

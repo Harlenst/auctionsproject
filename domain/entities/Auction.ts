@@ -278,15 +278,13 @@ export class Auction {
         return this.bids[this.bids.length - 1];
     }
 
-    getPaymentInformation(): {
+        getPaymentInformation(): {
         winnerId: number;
         amount: number;
         createdAt: Date;
         expirationDate: Date;
     } {
-
-        const winner =
-            this.getWinner();
+        const winner = this.getWinner();
 
         if (winner === null) {
             throw new Error(
@@ -294,18 +292,18 @@ export class Auction {
             );
         }
 
-        // RN-15
-        const expirationDate =
-            new Date(
-                this.closingAt.getTime() +
-                48 * 60 * 60 * 1000
-            );
+        // RN-15: 48 horas desde la creación de la orden.
+        const createdAt = new Date();
+
+        const expirationDate = new Date(
+            createdAt.getTime() + 48 * 60 * 60 * 1000
+        );
 
         return {
             winnerId: winner.userId,
             amount: winner.amount.getValue(),
-            createdAt: new Date(),
-            expirationDate: expirationDate
+            createdAt,
+            expirationDate
         };
     }
 }
