@@ -9,10 +9,16 @@ let io: Server | null = null;
 export function initializeSocketServer(
     httpServer: HttpServer
 ): Server {
+    const allowedOrigins = [
+        'http://localhost:5173',
+        'http://localhost:5174'
+    ];
+
     io = new Server(httpServer, {
         cors: {
-            origin: process.env.CLIENT_URL || 'http://localhost:5173',
-            methods: ['GET', 'POST']
+            origin: allowedOrigins,
+            methods: ['GET', 'POST'],
+            credentials: true
         }
     });
 
@@ -30,7 +36,7 @@ export function initializeSocketServer(
                 typeof authToken === 'string'
                     ? authToken
                     : typeof authorization === 'string' &&
-                      authorization.startsWith('Bearer ')
+                        authorization.startsWith('Bearer ')
                         ? authorization.slice(7)
                         : undefined;
 

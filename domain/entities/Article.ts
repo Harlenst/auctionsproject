@@ -1,6 +1,7 @@
 
 export class Article {
     id: number;
+    sellerId: number;
     name: string;
     description: string;
     condition: string;
@@ -8,11 +9,16 @@ export class Article {
 
     constructor(
         id: number,
+        sellerId: number,
         name: string,
         description: string,
         condition: string,
         imageUrl: string
     ) {
+        if (!Number.isInteger(sellerId) || sellerId <= 0) {
+            throw new Error('El vendedor del artículo no es válido');
+        }
+
         if (!name.trim()) {
             throw new Error('El nombre del artículo es obligatorio');
         }
@@ -26,6 +32,7 @@ export class Article {
         }
 
         this.id = id;
+        this.sellerId = sellerId;
         this.name = name.trim();
         this.description = description.trim();
         this.condition = condition.trim();

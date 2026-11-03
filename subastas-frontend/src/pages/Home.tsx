@@ -15,12 +15,15 @@ import BidModal from '../components/BidModal';
 
 import type { Auction } from '../components/AuctionCard';
 
+
 interface HomeProps {
   onLogin: () => void;
   onRegister: () => void;
+  onSell: () => void;
 }
 
-function Home({ onLogin, onRegister }: HomeProps) {
+
+function Home({ onLogin, onRegister, onSell }: HomeProps) {
   const [selectedAuction, setSelectedAuction] =
     useState<Auction | null>(null);
 
@@ -43,7 +46,7 @@ function Home({ onLogin, onRegister }: HomeProps) {
 
         <Categories />
         <HowItWorks />
-        <SellSection />
+        <SellSection onSell={onSell} />
         <Testimonials />
         <FAQ />
       </main>

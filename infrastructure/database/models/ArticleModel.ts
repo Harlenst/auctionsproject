@@ -8,6 +8,10 @@ const articleSchema = new Schema(
             required: true,
             unique: true
         },
+        sellerId: {
+            type: Number,
+            required: true
+        },
         name: {
             type: String,
             required: true,
@@ -28,6 +32,7 @@ const articleSchema = new Schema(
             required: true,
             trim: true
         }
+
     },
     {
         versionKey: false,

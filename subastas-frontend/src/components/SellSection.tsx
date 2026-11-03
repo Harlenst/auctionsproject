@@ -1,5 +1,9 @@
 
-function SellSection() {
+interface SellSectionProps {
+  onSell: () => void;
+}
+
+function SellSection({ onSell }: SellSectionProps) {
   return (
     <section className="sell-section-hs" id="vender">
       <div className="container">
@@ -19,10 +23,14 @@ function SellSection() {
               en su próxima historia.
             </p>
 
-            <a href="#registro" className="btn-hs btn-gold">
+            <button
+              type="button"
+              className="btn-hs btn-gold"
+              onClick={onSell}
+            >
               Quiero vender mi artículo
               <span> ↗</span>
-            </a>
+            </button>
 
             <div className="sell-benefits-hs">
               <span>✓ Publicación sencilla</span>

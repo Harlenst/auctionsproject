@@ -3,14 +3,17 @@ import { useState } from 'react';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import PublishAuction from './pages/PublishAuction';
 import { useAuth } from './context/AuthContext';
 import './App.css';
 
-type View = 'home' | 'login' | 'register';
+type View = 'home' | 'login' | 'register' | 'publish';
 
 function App() {
   const [view, setView] = useState<View>('home');
-  const { loading } = useAuth();
+  const [returnToPublish, setReturnToPublish] = useState(false);
+
+  const { loading, isAuthenticated } = useAuth();
 
   if (loading) {
     return (
@@ -24,7 +27,10 @@ function App() {
     return (
       <Login
         onRegister={() => setView('register')}
-        onSuccess={() => setView('home')}
+        onSuccess={() => {
+          setView(returnToPublish ? 'publish' : 'home');
+          setReturnToPublish(false);
+        }}
       />
     );
   }
@@ -33,6 +39,18 @@ function App() {
     return (
       <Register
         onLogin={() => setView('login')}
+        onSuccess={() => {
+          setView(returnToPublish ? 'publish' : 'home');
+          setReturnToPublish(false);
+        }}
+      />
+    );
+  }
+
+  if (view === 'publish') {
+    return (
+      <PublishAuction
+        onBack={() => setView('home')}
         onSuccess={() => setView('home')}
       />
     );
@@ -42,6 +60,14 @@ function App() {
     <Home
       onLogin={() => setView('login')}
       onRegister={() => setView('register')}
+      onSell={() => {
+        if (isAuthenticated) {
+          setView('publish');
+        } else {
+          setReturnToPublish(true);
+          setView('login');
+        }
+      }}
     />
   );
 }

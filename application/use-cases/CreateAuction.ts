@@ -7,7 +7,7 @@ export class CreateAuction {
     constructor(
         private auctionRepository: AuctionRepository,
         private articleRepository: ArticleRepository
-    ) {}
+    ) { }
 
     async execute(
         articleId: number,
@@ -27,6 +27,10 @@ export class CreateAuction {
             throw new Error('No existe el artículo asociado a esta subasta');
         }
 
+        if (article.sellerId !== sellerId) {
+            throw new Error('No puedes publicar una subasta con un artículo que no te pertenece');
+        }
+
         // 2. Generar identificador único
         const id = await this.auctionRepository.generateId();
 
@@ -42,6 +46,11 @@ export class CreateAuction {
             closingAt,
             status
         );
+        const validCategories = [1, 2, 3, 4];
+
+        if (!validCategories.includes(categoryId)) {
+            throw new Error('La categoría seleccionada no es válida');
+        }
 
         // 4. Persistir la subasta
         await this.auctionRepository.save(auction);

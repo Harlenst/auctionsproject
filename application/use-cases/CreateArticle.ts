@@ -6,6 +6,7 @@ export class CreateArticle {
     constructor(private repository: ArticleRepository) {}
 
     async execute(
+        sellerId: number,
         name: string,
         description: string,
         condition: string,
@@ -16,6 +17,7 @@ export class CreateArticle {
 
         const article = new Article(
             id,
+            sellerId,
             name,
             description,
             condition,

@@ -8,6 +8,7 @@ export class MongoArticleRepository implements ArticleRepository {
 
     private toDomain(document: {
         id: number;
+        sellerId: number;
         name: string;
         description: string;
         condition: string;
@@ -15,6 +16,7 @@ export class MongoArticleRepository implements ArticleRepository {
     }): Article {
         return new Article(
             document.id,
+            document.sellerId,
             document.name,
             document.description,
             document.condition,
@@ -46,7 +48,8 @@ export class MongoArticleRepository implements ArticleRepository {
             { $inc: { sequence: 1 } },
             {
                 upsert: true,
-                returnDocument: 'after', setDefaultsOnInsert: true
+                returnDocument: 'after',
+                setDefaultsOnInsert: true
             }
         ).exec();
 
@@ -56,6 +59,7 @@ export class MongoArticleRepository implements ArticleRepository {
 
         return counter.sequence;
     }
+
     async update(article: Article): Promise<void> {
         const result = await ArticleModel.updateOne(
             { id: article.id },
@@ -77,6 +81,7 @@ export class MongoArticleRepository implements ArticleRepository {
     async save(article: Article): Promise<void> {
         await ArticleModel.create({
             id: article.id,
+            sellerId: article.sellerId,
             name: article.name,
             description: article.description,
             condition: article.condition,

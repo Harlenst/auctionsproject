@@ -1,7 +1,7 @@
 
 import { Request, Response } from 'express';
 import { HttpError } from '../application/errors/HttpError';
-
+import { AuthenticatedRequest } from '../middleware/authMiddleware';
 import { CreateArticle } from '../application/use-cases/CreateArticle';
 import { GetArticles } from  '../application/use-cases/GetArticles';
 import { GetArticle } from '../application/use-cases/GetArticle';
@@ -51,10 +51,21 @@ export const getArticle = async (
     });
 };
 
+
 export const createArticle = async (
     request: Request,
     response: Response
 ): Promise<void> => {
+    const user = (request as AuthenticatedRequest).user;
+
+    if (!user) {
+        throw new HttpError(
+            401,
+            'UNAUTHORIZED',
+            'Debes iniciar sesión'
+        );
+    }
+
     const { name, description, condition, imageUrl } = request.body;
 
     if (
@@ -74,6 +85,7 @@ export const createArticle = async (
         const useCase = new CreateArticle(articleRepository);
 
         const article = await useCase.execute(
+            user.userId,
             name,
             description,
             condition,
@@ -99,10 +111,21 @@ export const createArticle = async (
     }
 };
 
+
 export const updateArticle = async (
     request: Request,
     response: Response
 ): Promise<void> => {
+    const user = (request as AuthenticatedRequest).user;
+
+    if (!user) {
+        throw new HttpError(
+            401,
+            'UNAUTHORIZED',
+            'Debes iniciar sesión'
+        );
+    }
+
     const id = Number(request.params.id);
 
     if (!Number.isInteger(id) || id <= 0) {
@@ -128,27 +151,43 @@ export const updateArticle = async (
         );
     }
 
-    const useCase = new UpdateArticle(articleRepository);
+    try {
+        const useCase = new UpdateArticle(articleRepository);
 
-    const article = await useCase.execute(
-        id,
-        name,
-        description,
-        condition,
-        imageUrl
-    );
+        const article = await useCase.execute(
+            id,
+            name,
+            description,
+            condition,
+            imageUrl,
+            user.userId
+        );
 
-    if (!article) {
-        response.status(404).json({
-            ok: false,
-            code: 'ARTICLE_NOT_FOUND',
-            message: 'El artículo no fue encontrado'
+        if (!article) {
+            response.status(404).json({
+                ok: false,
+                code: 'ARTICLE_NOT_FOUND',
+                message: 'El artículo no fue encontrado'
+            });
+            return;
+        }
+
+        response.status(200).json({
+            ok: true,
+            data: article
         });
-        return;
-    }
 
-    response.status(200).json({
-        ok: true,
-        data: article
-    });
+    } catch (error) {
+        if (error instanceof HttpError) throw error;
+
+        if (error instanceof Error) {
+            throw new HttpError(
+                403,
+                'ARTICLE_UPDATE_FORBIDDEN',
+                error.message
+            );
+        }
+
+        throw error;
+    }
 };

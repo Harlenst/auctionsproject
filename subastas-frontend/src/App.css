@@ -2004,3 +2004,192 @@ h2 span{color:var(--gold-light)}
 @media(prefers-reduced-motion:reduce){
  *,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}
 }
+
+/* =========================================
+   PUBLICAR SUBASTA - CASA HS
+========================================= */
+
+.publish-page {
+    min-height: 100vh;
+    padding: 35px 0 90px;
+    background:
+        radial-gradient(circle at 10% 10%, rgba(198, 160, 74, 0.08), transparent 30%),
+        var(--navy);
+}
+
+.publish-page > .container {
+    max-width: 1050px;
+}
+
+/* Botón volver */
+
+.publish-page .btn-hs:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Encabezado */
+
+.publish-page .section-heading-hs {
+    display: block;
+    margin: 45px 0 35px;
+}
+
+.publish-page .section-heading-hs h1 {
+    margin: 10px 0 15px;
+    color: var(--ivory);
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.8rem, 6vw, 4.5rem);
+    font-weight: 500;
+    line-height: 1.1;
+}
+
+.publish-page .section-heading-hs h1 span {
+    color: var(--gold-light);
+}
+
+.publish-page .section-heading-hs p {
+    max-width: 650px;
+    color: var(--muted);
+    line-height: 1.8;
+}
+
+/* Formulario principal */
+
+.publish-form-hs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 24px;
+    padding: 38px;
+    background: var(--navy-light);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-shadow: 0 20px 55px rgba(0, 0, 0, 0.2);
+}
+
+/* Títulos de cada sección */
+
+.publish-form-hs h2 {
+    grid-column: 1 / -1;
+    margin: 12px 0 15px;
+    padding-bottom: 17px;
+    border-bottom: 1px solid var(--border);
+    color: var(--ivory);
+    font-size: clamp(1.7rem, 3vw, 2.3rem);
+}
+
+.publish-form-hs h2:not(:first-child) {
+    margin-top: 30px;
+}
+
+/* Etiquetas */
+
+.publish-form-hs label {
+    align-self: end;
+    color: #ded9ce;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+/* Campos */
+
+.publish-form-hs input,
+.publish-form-hs textarea,
+.publish-form-hs select {
+    width: 100%;
+    min-width: 0;
+    padding: 14px 15px;
+    border: 1px solid rgba(198, 160, 74, 0.25);
+    border-radius: 4px;
+    outline: none;
+    background: #101827;
+    color: var(--ivory);
+    font: inherit;
+    font-size: 0.85rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.publish-form-hs input::placeholder,
+.publish-form-hs textarea::placeholder {
+    color: #8490a0;
+}
+
+.publish-form-hs input:focus,
+.publish-form-hs textarea:focus,
+.publish-form-hs select:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(198, 160, 74, 0.12);
+}
+
+.publish-form-hs textarea {
+    min-height: 125px;
+    resize: vertical;
+}
+
+.publish-form-hs select {
+    cursor: pointer;
+}
+
+.publish-form-hs input[type="datetime-local"] {
+    color-scheme: dark;
+}
+
+/* Mensajes */
+
+.publish-error-hs {
+    grid-column: 1 / -1;
+    padding: 14px 16px;
+    border: 1px solid rgba(255, 100, 100, 0.3);
+    border-radius: 4px;
+    background: rgba(180, 40, 40, 0.12);
+    color: #ff9b9b;
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+/* Botón publicar */
+
+.publish-form-hs > button[type="submit"] {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-height: 55px;
+    margin-top: 15px;
+    font-size: 0.78rem;
+}
+
+.publish-form-hs > button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Adaptación para móviles */
+
+@media (max-width: 700px) {
+    .publish-page {
+        padding: 20px 0 55px;
+    }
+
+    .publish-page .section-heading-hs {
+        margin: 35px 0 25px;
+    }
+
+    .publish-form-hs {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        padding: 23px 18px;
+    }
+
+    .publish-form-hs h2,
+    .publish-error-hs,
+    .publish-form-hs > button[type="submit"] {
+        grid-column: 1;
+    }
+
+    .publish-form-hs h2:not(:first-child) {
+        margin-top: 22px;
+    }
+
+    .publish-form-hs label {
+        margin-top: 9px;
+    }
+}
