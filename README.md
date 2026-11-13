@@ -1,313 +1,265 @@
-Plataforma de Subastas en Línea
+# Casa de Subastas HS
 
-API desarrollada con Node.js, Express y TypeScript para gestionar usuarios, artículos, categorías, subastas, pujas y órdenes de pago.
+Plataforma web para la gestión de subastas en línea. Permite a los usuarios registrarse, iniciar sesión, publicar artículos, participar en subastas mediante ofertas y consultar los cambios en tiempo real.
 
-Tecnologías
+## 1. Tecnologías utilizadas
 
-Node.js
+### Backend
+- Node.js
+- Express
+- TypeScript
+- MongoDB con Mongoose
+- JSON Web Tokens (JWT)
+- Socket.IO
+- Jest
 
-Express
+### Frontend
+- React 19
+- TypeScript
+- Vite
+- React Router
+- Axios
+- Socket.IO Client
+- Lucide React
 
-TypeScript
+## 2. Estructura del proyecto
 
-Jest
+```text
+subastas-api/
+├── subastas-frontend/
+│   ├── public/
+│   ├── src/
+│   ├── .env
+│   ├── package.json
+│   └── vite.config.ts
+├── tests/
+├── .env
+├── .env.example
+├── .gitignore
+├── app.ts
+├── jest.config.js
+├── package.json
+└── package-lock.json
+```
 
-ts-jest
+## 3. Requisitos previos
 
-Arquitectura
+Antes de ejecutar el proyecto, asegúrate de tener instalado:
 
-El proyecto utiliza una separación por capas:
+- Node.js
+- npm
+- Una instancia de MongoDB o una base de datos en MongoDB Atlas.
+- Git (opcional, para clonar el repositorio).
 
-domain/
-application/
-infrastructure/
-controllers/
-routes/
+## 4. Instalación
 
-Domain
+Clona el repositorio:
 
-Contiene las entidades y reglas principales del negocio.
-
-domain/
-├── entities/
-└── value-objects/
-
-Entidades principales:
-
-User
-
-Article
-
-Category
-
-Auction
-
-Bid
-
-RejectedBidAttempt
-
-PaymentOrder
-
-PaymentEvent
-
-Notification
-
-Objetos de valor:
-
-Money
-
-Email
-
-AuctionStatus
-
-Application
-
-Contiene los casos de uso y los puertos de persistencia.
-
-application/
-├── ports/
-└── use-cases/
-
-Casos de uso principales:
-
-CreateAuction
-
-GetAuctions
-
-GetAuction
-
-PlaceBid
-
-CancelAuction
-
-CloseAuction
-
-CreateUser
-
-LoginUser
-
-ConfirmPayment
-
-ExpirePaymentOrder
-
-Infrastructure
-
-Contiene las implementaciones de los repositorios.
-
-infrastructure/
-└── repositories/
-
-Actualmente se utiliza persistencia en memoria.
-
-Controllers
-
-Reciben las solicitudes HTTP y ejecutan los casos de uso correspondientes.
-
-controllers/
-├── auctions.ts
-└── users.ts
-
-Routes
-
-Define las rutas disponibles de la API.
-
-routes/
-├── auctions.ts
-└── users.ts
-
-Instalación
-
-Clonar el repositorio:
-
+```bash
 git clone https://github.com/Harlenst/auctionsproject.git
+```
 
-Ingresar al proyecto:
+Entra a la carpeta del backend:
 
+```bash
 cd auctionsproject
+```
 
-Instalar las dependencias:
+Instala las dependencias:
 
+```bash
 npm install
+```
 
-Ejecución
+Después, instala las dependencias del frontend:
 
-Compilar el proyecto:
+```bash
+cd subastas-frontend
+npm install
+```
 
-npm run build
+## 5. Configuración de variables de entorno
 
-Ejecutar la aplicación:
+### Backend
 
-npm run app
+Crea un archivo `.env` en la raíz del backend:
 
-Servidor:
+```env
+PORT=5000
+JWT_SECRET=your_jwt_secret
+JWT_EXPIRES_IN=1h
+CLIENT_URL=http://localhost:5173
+MONGODB_URI=your_mongodb_connection_string
+PAYMENT_WEBHOOK_SECRET=your_payment_webhook_secret
+```
 
-http://localhost:5000
+Descripción:
 
-Para ejecutar en modo desarrollo:
+| Variable | Descripción |
+|---|---|
+| PORT | Puerto del servidor backend. |
+| JWT_SECRET | Clave para firmar los tokens JWT. |
+| JWT_EXPIRES_IN | Tiempo de expiración de los tokens. |
+| CLIENT_URL | Dirección del frontend. |
+| MONGODB_URI | Cadena de conexión a MongoDB. |
+| PAYMENT_WEBHOOK_SECRET | Clave para verificar la autenticidad de las notificaciones del webhook de pagos. |
 
+### Frontend
+
+Crea un archivo `.env` dentro de `subastas-frontend`:
+
+```env
+VITE_API_URL=http://localhost:5000/api/v1
+VITE_SOCKET_URL=http://localhost:5000
+```
+
+Estas variables permiten configurar la comunicación con la API y el servidor Socket.IO.
+
+**Importante:** No publiques archivos `.env` ni claves privadas en el repositorio. Utiliza `.env.example` con valores de ejemplo.
+
+## 6. Ejecución del proyecto
+
+### Iniciar el backend
+
+Desde la carpeta raíz:
+
+```bash
 npm run dev
+```
 
-Pruebas
+El servidor estará disponible en:
 
-Las pruebas se realizan utilizando Jest.
+```text
+http://localhost:5000
+```
 
+### Iniciar el frontend
+
+Abre una segunda terminal:
+
+```bash
+cd subastas-frontend
+npm run dev
+```
+
+El frontend estará disponible en:
+
+```text
+http://localhost:5173
+```
+
+## 7. Funcionalidades principales
+
+### Gestión de usuarios
+- Registro de usuarios.
+- Inicio de sesión.
+- Autenticación mediante JWT.
+- Protección de rutas privadas.
+- Persistencia de la sesión al recargar la página.
+- Cierre de sesión.
+
+### Gestión de subastas
+- Consulta de subastas disponibles.
+- Visualización del detalle de cada subasta.
+- Creación de subastas.
+- Cancelación y cierre de subastas.
+- Consulta del estado y precio actual.
+
+### Sistema de ofertas
+- Registro de ofertas.
+- Validación del monto mínimo permitido.
+- Actualización del precio actual.
+- Conteo de ofertas realizadas.
+- Identificación del mejor postor.
+
+### Comunicación en tiempo real
+La aplicación utiliza Socket.IO para comunicar los cambios de las subastas sin necesidad de recargar la página.
+
+Entre los eventos utilizados se encuentran:
+
+| Evento | Descripción |
+|---|---|
+| `auction:join` | Permite unirse a una sala de subasta. |
+| `auction:leave` | Permite salir de una sala de subasta. |
+| `bid:created` | Notifica que se registró una nueva oferta. |
+| `bid:outbid` | Notifica que otro usuario superó una oferta. |
+| `auction:closed` | Notifica el cierre de una subasta. |
+
+## 8. Reglas de negocio
+
+El sistema contempla reglas para garantizar el funcionamiento correcto de las subastas:
+
+- El precio base y el incremento mínimo deben ser mayores que cero.
+- La fecha de cierre debe ser posterior a la fecha de creación.
+- La duración de una subasta debe estar entre una hora y treinta días.
+- Una subasta con ofertas registradas no puede cancelarse.
+- Solo se pueden realizar ofertas en subastas abiertas.
+- El vendedor no puede ofertar en su propia subasta.
+- La primera oferta debe ser igual o superior al precio base.
+- Las siguientes ofertas deben respetar el incremento mínimo.
+- El mejor postor no puede superarse a sí mismo.
+- Las ofertas rechazadas se registran.
+- Al cerrar una subasta se determina si existe un ganador o si quedó desierta.
+- Las órdenes de pago tienen un plazo de 48 horas.
+
+## 9. Seguridad
+
+El proyecto implementa mecanismos de seguridad como:
+
+- Autenticación mediante JSON Web Tokens.
+- Protección de rutas privadas.
+- Verificación de autenticación para las conexiones Socket.IO.
+- Validación de ofertas y reglas de negocio.
+- Verificación de firmas HMAC-SHA256 para las notificaciones del webhook de pagos.
+
+## 10. Pruebas y compilación
+
+### Backend
+
+Ejecutar las pruebas:
+
+```bash
 npm test
+```
 
-Las pruebas principales verifican las reglas de negocio de las subastas:
+Compilar TypeScript:
 
-Puja válida.
+```bash
+npm run build
+```
 
-Puja menor al precio base.
+### Frontend
 
-Puja menor al incremento mínimo.
+Compilar la aplicación:
 
-Puja realizada por el vendedor.
+```bash
+npm run build
+```
 
-Puja del mejor postor.
+Ejecutar el análisis de código:
 
-Cancelación de una subasta.
+```bash
+npm run lint
+```
 
-Cancelación de una subasta con pujas.
+## 11. Documentación de la API
 
-Cierre de una subasta con pujas.
+La documentación de los endpoints se encuentra en:
 
-Cierre de una subasta sin pujas.
-
-Segundo intento de cierre.
-
-API
-
-La API utiliza el prefijo:
-
-/api/v1
-
-Usuarios
-
-Registrar usuario:
-
-POST /api/v1/users
-
-Iniciar sesión:
-
-POST /api/v1/auth/login
-
-Subastas
-
-Obtener todas las subastas:
-
-GET /api/v1/auctions
-
-Obtener una subasta:
-
-GET /api/v1/auctions/:id
-
-Crear una subasta:
-
-POST /api/v1/auctions
-
-Cancelar una subasta:
-
-PATCH /api/v1/auctions/:id/cancel
-
-Cerrar una subasta:
-
-PATCH /api/v1/auctions/:id/close
-
-Pujas
-
-Registrar una puja:
-
-POST /api/v1/auctions/:id/bids
-
-Reglas principales
-
-El sistema implementa las principales reglas de negocio relacionadas con las subastas:
-
-El precio base debe ser mayor que cero.
-
-El incremento mínimo debe ser mayor que cero.
-
-La fecha de cierre debe ser posterior a la publicación.
-
-La duración de la subasta debe estar entre una hora y treinta días.
-
-Una subasta con pujas no puede ser cancelada.
-
-Solo una subasta abierta puede recibir pujas.
-
-El vendedor no puede pujar en su propia subasta.
-
-La primera puja debe ser igual o superior al precio base.
-
-Las siguientes pujas deben superar la puja actual por el incremento mínimo.
-
-El mejor postor no puede superar su propia puja.
-
-Las pujas rechazadas se almacenan con su motivo.
-
-Una subasta con pujas tiene un ganador al momento del cierre.
-
-Una subasta sin pujas queda como desierta.
-
-Una subasta no puede cerrarse nuevamente después de haber sido cerrada.
-
-Persistencia
-
-La primera versión utiliza repositorios en memoria.
-
-Los puertos se encuentran en:
-
-application/ports/
-
-Las implementaciones se encuentran en:
-
-infrastructure/repositories/
-
-Esto permite cambiar posteriormente la implementación de persistencia sin modificar las reglas principales del dominio.
-
-Documentación de la API
-
-La documentación de la API se encuentra en:
-
+```text
 docs/openapi.json
+```
 
-Seguridad
+Este archivo contiene la especificación OpenAPI de la API.
 
-Las contraseñas de los usuarios son almacenadas utilizando un proceso de hash y no se devuelven en las respuestas de la API.
+## 12. Repositorio
 
-Git
+GitHub:
 
-El proyecto utiliza ramas para separar el desarrollo de las funcionalidades:
+https://github.com/Harlenst/auctionsproject
 
-main
-auctions
-users
-entities
+## 13. Estado del proyecto
 
-Los commits utilizan mensajes descriptivos para identificar los cambios realizados.
+El proyecto integra un backend y un frontend para gestionar subastas en línea, con autenticación de usuarios, protección de rutas, gestión de ofertas, comunicación en tiempo real y procesamiento de notificaciones de pagos.
 
-Estado del proyecto
-
-Esta versión contiene:
-
-Modelo de dominio.
-
-Entidades principales.
-
-Objetos de valor.
-
-Reglas de negocio.
-
-Casos de uso.
-
-Controladores.
-
-Rutas.
-
-Repositorios en memoria.
-
-Pruebas automatizadas.
-
-Documentación OpenAPI.
-
-Las funcionalidades de persistencia con base de datos y comunicación en tiempo real mediante WebSockets corresponden a etapas posteriores del proyecto.
+**Proyecto académico – Electiva II: Desarrollo Backend.**

@@ -92,6 +92,9 @@ export function initializeSocketServer(
                 socket.emit('auction:joined', {
                     auctionId: id
                 });
+                console.log(
+                    `Usuario ${user.userId} quedó suscrito a la sala auction:${id}`
+                );
 
                 console.log(
                     `Usuario ${user.userId} ingresó a la subasta ${id}`

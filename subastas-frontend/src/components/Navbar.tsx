@@ -5,14 +5,39 @@ import { useAuth } from '../context/AuthContext';
 interface NavbarProps {
   onLogin: () => void;
   onRegister: () => void;
+  onHome?: () => void;
+  onCategories?: () => void;
 }
 
-function Navbar({ onLogin, onRegister }: NavbarProps) {
+function Navbar({
+  onLogin,
+  onRegister,
+  onHome,
+  onCategories
+}: NavbarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const { user, isAuthenticated, logout } = useAuth();
 
   function handleLogout() {
     logout();
+    setMenuOpen(false);
+  }
+
+  function handleHome(event: React.MouseEvent<HTMLAnchorElement>) {
+    if (onHome) {
+      event.preventDefault();
+      onHome();
+    }
+
+    setMenuOpen(false);
+  }
+
+  function handleCategories(event: React.MouseEvent<HTMLAnchorElement>) {
+    if (onCategories) {
+      event.preventDefault();
+      onCategories();
+    }
+
     setMenuOpen(false);
   }
 
@@ -27,8 +52,14 @@ function Navbar({ onLogin, onRegister }: NavbarProps) {
 
       <header className="navbar-hs">
         <div className="container nav-content">
-          <a href="#inicio" className="brand-hs">
+
+          <a
+            href="#inicio"
+            className="brand-hs"
+            onClick={handleHome}
+          >
             <span className="brand-logo">HS</span>
+
             <span>
               Casa de Subasta
               <strong>HS</strong>
@@ -36,27 +67,62 @@ function Navbar({ onLogin, onRegister }: NavbarProps) {
           </a>
 
           <button
+            type="button"
             className="menu-toggle"
             onClick={() => setMenuOpen(!menuOpen)}
-            aria-label="Abrir menú"
+            aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
+            aria-expanded={menuOpen}
           >
             {menuOpen ? '×' : '☰'}
           </button>
 
           <nav className={menuOpen ? 'nav-links open' : 'nav-links'}>
-            <a href="#subastas" onClick={() => setMenuOpen(false)}>Subastas</a>
-            <a href="#categorias" onClick={() => setMenuOpen(false)}>Categorías</a>
-            <a href="#como-pujar" onClick={() => setMenuOpen(false)}>Cómo pujar</a>
-            <a href="#vender" onClick={() => setMenuOpen(false)}>Vender con nosotros</a>
-            <a href="#contacto" onClick={() => setMenuOpen(false)}>Contacto</a>
+
+            <a
+              href="#subastas"
+              onClick={() => setMenuOpen(false)}
+            >
+              Subastas
+            </a>
+
+            <a
+              href="#categorias"
+              onClick={handleCategories}
+            >
+              Categorías
+            </a>
+
+            <a
+              href="#como-pujar"
+              onClick={() => setMenuOpen(false)}
+            >
+              Cómo pujar
+            </a>
+
+            <a
+              href="#vender"
+              onClick={() => setMenuOpen(false)}
+            >
+              Vender con nosotros
+            </a>
+
+            <a
+              href="#contacto"
+              onClick={() => setMenuOpen(false)}
+            >
+              Contacto
+            </a>
+
           </nav>
 
           <div className="nav-buttons">
+
             {isAuthenticated ? (
               <>
                 <span className="user-welcome">
                   Hola, {user?.name}
                 </span>
+
                 <button
                   type="button"
                   className="btn-hs btn-outline"
@@ -74,6 +140,7 @@ function Navbar({ onLogin, onRegister }: NavbarProps) {
                 >
                   Ingresar
                 </button>
+
                 <button
                   type="button"
                   className="btn-hs btn-gold"
@@ -83,6 +150,7 @@ function Navbar({ onLogin, onRegister }: NavbarProps) {
                 </button>
               </>
             )}
+
           </div>
         </div>
       </header>
