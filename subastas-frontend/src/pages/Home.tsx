@@ -15,15 +15,19 @@ import BidModal from '../components/BidModal';
 
 import type { Auction } from '../components/AuctionCard';
 
-
 interface HomeProps {
   onLogin: () => void;
   onRegister: () => void;
   onSell: () => void;
+  onCategories: (categoryId?: number) => void;
 }
 
-
-function Home({ onLogin, onRegister, onSell }: HomeProps) {
+function Home({
+  onLogin,
+  onRegister,
+  onSell,
+  onCategories
+}: HomeProps) {
   const [selectedAuction, setSelectedAuction] =
     useState<Auction | null>(null);
 
@@ -36,18 +40,30 @@ function Home({ onLogin, onRegister, onSell }: HomeProps) {
       <Navbar
         onLogin={onLogin}
         onRegister={onRegister}
+        onCategories={() => onCategories()}
       />
 
       <main>
         <Hero />
+
         <TrustBar />
 
-        <AuctionGrid onBid={handleBid} />
+        <AuctionGrid
+          onBid={handleBid}
+        />
 
-        <Categories />
+        <Categories
+          onSelectCategory={onCategories}
+        />
+
         <HowItWorks />
-        <SellSection onSell={onSell} />
+
+        <SellSection
+          onSell={onSell}
+        />
+
         <Testimonials />
+
         <FAQ />
       </main>
 

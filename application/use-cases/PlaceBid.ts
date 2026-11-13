@@ -40,10 +40,8 @@ export class PlaceBid {
 
             await closeAuction.execute(auction, paymentOrderId);
 
-            // Persistir el cierre de la subasta.
             await this.repository.save(auction);
 
-            // Notificar el cierre automático.
             this.eventPublisher?.auctionClosed(auction);
 
             throw new Error(
@@ -51,14 +49,47 @@ export class PlaceBid {
             );
         }
 
+        // Identificar al anterior mejor postor.
+        const previousHighestBid = auction.getHighestBid();
+
+        const previousHighestBidderId =
+            previousHighestBid?.userId ?? null;
+
         try {
+            // Validar y registrar la nueva puja.
             auction.placeBid(bid);
         } catch (error) {
             await this.repository.save(auction);
             throw error;
         }
 
+        // Guardar la subasta actualizada.
         await this.repository.save(auction);
+
+        // Notificar una sola vez a los participantes.
+        console.log('PUBLICANDO NUEVA PUJA:', auction.id);
+
+        this.eventPublisher?.bidCreated(
+            auction.id,
+            bid
+        );
+
+        // Avisar al anterior mejor postor.
+        if (
+            previousHighestBidderId !== null &&
+            previousHighestBidderId !== bid.userId
+        ) {
+            console.log(
+                'PUBLICANDO PUJA SUPERADA:',
+                previousHighestBidderId
+            );
+
+            this.eventPublisher?.bidOutbid(
+                auction.id,
+                previousHighestBidderId,
+                bid.amount.getValue()
+            );
+        }
 
         return bid;
     }

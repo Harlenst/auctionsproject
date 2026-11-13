@@ -1,19 +1,37 @@
 
 import { useState } from 'react';
+
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import PublishAuction from './pages/PublishAuction';
+import CategoriesPage from './pages/CategoriesPage';
+
 import { useAuth } from './context/AuthContext';
 import './App.css';
 
-type View = 'home' | 'login' | 'register' | 'publish';
+type View =
+  | 'home'
+  | 'login'
+  | 'register'
+  | 'publish'
+  | 'categories';
 
 function App() {
   const [view, setView] = useState<View>('home');
-  const [returnToPublish, setReturnToPublish] = useState(false);
+
+  const [returnToPublish, setReturnToPublish] =
+    useState(false);
+
+  const [initialCategoryId, setInitialCategoryId] =
+    useState<number | null>(null);
 
   const { loading, isAuthenticated } = useAuth();
+
+  function handleOpenCategories(categoryId?: number) {
+    setInitialCategoryId(categoryId ?? null);
+    setView('categories');
+  }
 
   if (loading) {
     return (
@@ -56,6 +74,17 @@ function App() {
     );
   }
 
+  if (view === 'categories') {
+    return (
+      <CategoriesPage
+        onLogin={() => setView('login')}
+        onRegister={() => setView('register')}
+        onHome={() => setView('home')}
+        initialCategoryId={initialCategoryId}
+      />
+    );
+  }
+
   return (
     <Home
       onLogin={() => setView('login')}
@@ -68,6 +97,7 @@ function App() {
           setView('login');
         }
       }}
+      onCategories={handleOpenCategories}
     />
   );
 }
